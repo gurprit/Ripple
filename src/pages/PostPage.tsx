@@ -44,7 +44,7 @@ export default function PostPage() {
     <>
 
       <div className="max-w-md mx-auto mt-10 p-4 bg-white rounded shadow">
-        <h1 className="text-2xl font-bold mb-4 text-center">Post a Ripple 🌊</h1>
+        <h1 className="text-2xl font-bold mb-4 text-center">Post</h1>
         <form onSubmit={handleSubmit}>
           <textarea
             className="w-full border rounded p-2 mb-4"

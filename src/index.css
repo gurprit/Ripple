@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Bitcount+Grid+Double:wght@100..900&display=swap');
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -11,6 +13,13 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+h1 {
+  font-family: "Bitcount Grid Double", system-ui;
+  font-optical-sizing: auto;
+  font-weight: <weight>;
+  font-style: normal;
 }
 
 a {
@@ -77,7 +86,26 @@ body {
 .main-nav a {
   padding: 0 10px;
 }
-
 .timeline__post {
-  
+  position: relative;
+  padding: 0 0 20px ;
+}
+
+.timeline__post__content {
+  display: flex;
+}
+
+.timeline__post__content img {
+  width: 50px;
+}
+
+.timeline__post__text {
+  background: white;
+  color: black;
+  padding: 0 5px;
+  font-size: 32px;
+}
+
+.profile header img{
+  float: left;
 }

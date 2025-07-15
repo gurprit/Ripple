@@ -23,14 +23,18 @@ export default function ProfilePage() {
 
   return (
 
-    <div className="flex flex-col items-center justify-center h-screen bg-gray-100 p-4">\
-      <img
+    <div className="profile flex flex-col items-center justify-center h-screen bg-gray-100 p-4">
+
+    <header>
+        <img
         src={user.photoURL ?? ''}
         alt={user.displayName ?? 'User'}
         className="w-24 h-24 rounded-full mb-4"
-      />
-      <h1 className="text-2xl font-bold mb-2">{user.displayName}</h1>
-      <p className="text-gray-600 mb-4">{user.email}</p>
+        />
+        <h1 className="text-2xl font-bold mb-2">{user.displayName}</h1>
+        <p className="text-gray-600 mb-4">{user.email}</p>
+      </header>
+      
 
       {/* Placeholder stats */}
       <div className="flex space-x-4">
