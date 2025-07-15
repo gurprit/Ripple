@@ -32,18 +32,19 @@ export default function TimelinePage() {
   return (
     <>
       <div className="max-w-md mx-auto mt-10 p-4">
-        <h1 className="text-2xl font-bold mb-4 text-center">Ripple Timeline 🌊</h1>
+        <h1 className="text-2xl font-bold mb-4 text-center">Timeline</h1>
         {loading && <p className="text-center">Loading ripples...</p>}
         {!loading && posts.length === 0 && <p className="text-center">No ripples yet.</p>}
         {posts.map(post => (
-          <div key={post.id} className="bg-white rounded shadow p-4 mb-4">
-            <div className="flex items-center mb-2">
+          <div key={post.id} className="timeline__post">
+            <div className="timeline__post__content">
               {post.photoURL && (
                 <img src={post.photoURL} alt="User avatar" className="w-8 h-8 rounded-full mr-2" />
               )}
-              <span className="font-semibold">{post.displayName || 'Anonymous'}</span>
+              <span className="timeline__post__name">{post.displayName || 'Anonymous'}</span>
             </div>
-            <p>{post.text}</p>
+            
+            <p className="timeline__post__text">{post.text}</p>
           </div>
         ))}
       </div>

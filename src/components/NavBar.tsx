@@ -10,10 +10,10 @@ export default function NavBar() {
   };
 
   return (
-    <nav className="w-full bg-blue-600 text-white flex justify-around py-3 fixed bottom-0 left-0">
-      <Link to="/" className="hover:underline">Timeline</Link>
-      <Link to="/post" className="hover:underline">Post Ripple</Link>
-      <Link to="/profile" className="hover:underline">Profile</Link>
+    <nav className="main-nav w-full bg-blue-600 text-white flex justify-around py-3 fixed bottom-0 left-0">
+      <Link to="/" className="hover:underline">Timeline</Link> 
+      <Link to="/post" className="hover:underline">Post Ripple</Link> 
+      <Link to="/profile" className="hover:underline">Profile</Link> 
       <button onClick={handleLogout} className="hover:underline">Logout</button>
     </nav>
   );
