@@ -5,6 +5,7 @@ import ProfilePage from './pages/ProfilePage';
 import PostPage from './pages/PostPage'; 
 import RequireAuth from './components/RequireAuth';
 import TimelinePage from './pages/TimelinePage';
+import PostDetailPage from './pages/PostDetailPage';
 
 function App() {
   return (
@@ -33,6 +34,10 @@ function App() {
             <PostPage />
           </RequireAuth>
         }
+      />
+      <Route path="/post/:id" element={
+        <PostDetailPage />
+        } 
       />
 
       <Route path="*" element={<Navigate to="/" />} />

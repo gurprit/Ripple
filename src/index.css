@@ -81,6 +81,8 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  width: 400px;
+  margin: auto;
 }
 
 .main-nav a {
