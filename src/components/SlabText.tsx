@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface SlabTextProps {
   text: string;
@@ -7,116 +7,123 @@ interface SlabTextProps {
   paddingFactor?: number;
 }
 
-export default function SlabText({
+const SlabText: React.FC<SlabTextProps> = ({
   text,
   maxWordsPerLine = 3,
   shortWordLength = 6,
-  paddingFactor = 0.92,
-}: SlabTextProps) {
+  paddingFactor = 0.92
+}) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLSpanElement>(null);
+  const [lines, setLines] = useState<string[]>([]);
+  const [fontSizes, setFontSizes] = useState<number[]>([]);
 
-  const [linesWithSizes, setLinesWithSizes] = useState<{ text: string; fontSize: number }[]>([]);
+  const isShort = (word: string) => word.length < shortWordLength;
 
-  const breakIntoLines = (words: string[]): string[] => {
-    const lines: string[] = [];
-    let i = 0;
+  const chunkWords = (words: string[]): string[] => {
+    const result: string[] = [];
+    let line: string[] = [];
 
-    while (i < words.length) {
-      let lineWords: string[] = [];
-      let wordCount = 0;
+    for (let i = 0; i < words.length; i++) {
+      line.push(words[i]);
+      const lineWordCount = line.length;
+      const shortCount = line.filter(isShort).length;
 
-      while (i < words.length && wordCount < maxWordsPerLine) {
-        const word = words[i];
-        lineWords.push(word);
-        wordCount++;
+      const nextWord = words[i + 1];
+      const lineHasLongWord = line.some(w => !isShort(w));
 
-        const shortWords = lineWords.filter(w => w.length < shortWordLength).length;
-        const longWords = lineWords.filter(w => w.length >= shortWordLength).length;
+      const nextWordWillBreak =
+        lineWordCount >= maxWordsPerLine ||
+        (lineWordCount >= 4 && shortCount === lineWordCount) ||
+        (lineWordCount === 2 && !isShort(line[0]) && !isShort(line[1])) ||
+        (!nextWord || line.join(' ').length + nextWord.length > 30);
 
-        if (lineWords.length >= 4 && shortWords === 4) break;
-        if (lineWords.length === 2 && longWords === 2) break;
-
-        i++;
+      if (nextWordWillBreak) {
+        result.push(line.join(' '));
+        line = [];
       }
-
-      lines.push(lineWords.join(' '));
     }
 
-    return lines;
+    if (line.length) {
+      result.push(line.join(' '));
+    }
+
+    return result;
   };
 
-  const measureFontSize = (line: string, baseSize: number, containerWidth: number): number => {
-    const span = measureRef.current;
-    if (!span) return baseSize;
-
-    span.textContent = line;
-    span.style.fontSize = `${baseSize}px`;
-    span.style.display = 'inline-block';
-
-    const measuredWidth = span.offsetWidth;
-    const scale = containerWidth / measuredWidth;
-    const newFontSize = Math.floor(baseSize * Math.min(scale, 1));
-
-    console.log(`📐 Measuring line: "${line}"`);
-    console.log(`🔤 Span content: "${span.textContent}"`);
-    console.log(`📏 Measured width: ${measuredWidth}px`);
-    console.log(`🧱 Line: "${line}" | MeasuredWidth: ${measuredWidth}px | Container: ${containerWidth}px | FontSize: ${newFontSize}px`);
-
-    return newFontSize;
+  const debounce = (func: () => void, delay = 50) => {
+    let timer: NodeJS.Timeout;
+    return () => {
+      clearTimeout(timer);
+      timer = setTimeout(func, delay);
+    };
   };
+
+  const layoutText = () => {
+    if (!containerRef.current || !measureRef.current) return;
+  
+    const rawWords = text.trim().split(/\s+/);
+    const containerWidth = containerRef.current.offsetWidth * paddingFactor;
+  
+    console.log('📦 Container width:', containerRef.current.offsetWidth, '→ adjusted:', containerWidth);
+    console.log('📚 Words:', rawWords);
+  
+    const brokenLines = chunkWords(rawWords);
+    const calculatedFontSizes: number[] = [];
+  
+    brokenLines.forEach(line => {
+      let min = 10;
+      let max = 400;
+      let bestFit = min;
+  
+      while (min <= max) {
+        const mid = Math.floor((min + max) / 2);
+        measureRef.current!.style.fontSize = `${mid}px`;
+        measureRef.current!.textContent = line;
+        const width = measureRef.current!.offsetWidth;
+  
+        if (width <= containerWidth) {
+          bestFit = mid;
+          min = mid + 1;
+        } else {
+          max = mid - 1;
+        }
+      }
+  
+      console.log(`🧱 Line: "${line}" | FontSize: ${bestFit}px`);
+      calculatedFontSizes.push(bestFit);
+    });
+  
+    setLines(brokenLines);
+    setFontSizes(calculatedFontSizes);
+  };
+  
 
   useEffect(() => {
-    requestAnimationFrame(() => {
-      const container = containerRef.current;
-      if (!container) return;
+    layoutText();
 
-      const fullWidth = container.offsetWidth;
-      const adjustedWidth = fullWidth * paddingFactor;
-      const words = text.split(/\s+/);
-
-      console.log(`📦 Container width: ${fullWidth} → adjusted: ${adjustedWidth}`);
-      console.log(`📚 Words: (${words.length})`, words);
-
-      const rawLines = breakIntoLines(words);
-
-      const newLinesWithSizes = rawLines.map((line) => ({
-        text: line,
-        fontSize: measureFontSize(line, 999, adjustedWidth),
-      }));
-
-      setLinesWithSizes(newLinesWithSizes);
+    const handleResize = debounce(() => {
+      console.log('📐 Window resized – recalculating layout...');
+      layoutText();
     });
-  }, [text, paddingFactor]);
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [text]);
 
   return (
-    <div ref={containerRef} className="slab-text w-full">
-      <span
-        ref={measureRef}
-        style={{
-          position: 'absolute',
-          visibility: 'hidden',
-          whiteSpace: 'nowrap',
-          padding: 0,
-          margin: 0,
-          fontFamily: "'Abril Fatface', serif",
-          fontWeight: 400,
-          letterSpacing: 0,
-        }}
-      />
-      {linesWithSizes.map(({ text: line, fontSize }, index) => (
-        <div
-          key={index}
-          style={{
-            fontSize: `${fontSize}px`,
-            lineHeight: `${fontSize * 1.1}px`,
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-          }}
-        >
+    <div ref={containerRef} className="slab-text-container">
+      <span ref={measureRef} style={{ visibility: 'hidden', position: 'absolute', whiteSpace: 'nowrap', pointerEvents: 'none', fontFamily: 'Abril Fatface' }} />
+      {lines.map((line, i) => (
+        <div key={i} className="slab-line" style={{ fontSize: `${fontSizes[i]}px`, fontFamily: 'Abril Fatface', lineHeight: 1.05 }}>
           {line}
         </div>
       ))}
     </div>
   );
-}
+};
+
+export default SlabText;
