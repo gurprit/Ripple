@@ -3,7 +3,6 @@ import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
 import { useNavigate } from 'react-router-dom';
 import emailjs from '@emailjs/browser';
-import NavBar from '../components/NavBar';
 
 export default function PostPage() {
   const [text, setText] = useState('');
@@ -58,7 +57,6 @@ export default function PostPage() {
 
   return (
     <div className="max-w-md mx-auto mt-10 p-4 bg-white rounded shadow">
-      <h1 className="text-2xl font-bold mb-4 text-center">Post a Ripple 🌊</h1>
       <form onSubmit={handleSubmit}>
         <textarea
           className="w-full border rounded p-2 mb-4"
@@ -83,7 +81,6 @@ export default function PostPage() {
           {loading ? 'Posting...' : 'Post & Send'}
         </button>
       </form>
-      <NavBar />
     </div>
   );
 }

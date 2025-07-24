@@ -9,8 +9,13 @@ import {
   deleteDoc,
   getDoc,
   addDoc,
+  serverTimestamp
 } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
+import emailjs from '@emailjs/browser';
+import { useNavigate } from 'react-router-dom';
+import SlabText from '../components/SlabText';
+
 
 interface Post {
   id: string;
@@ -25,6 +30,7 @@ interface Comment {
   id: string;
   uid: string;
   displayName: string | null;
+  photoURL: string | null;
   text: string;
   timestamp: any;
 }
@@ -36,6 +42,10 @@ export default function TimelinePage() {
   const [userLikes, setUserLikes] = useState<{ [postId: string]: boolean }>({});
   const [comments, setComments] = useState<{ [postId: string]: Comment[] }>({});
   const [newComment, setNewComment] = useState<{ [postId: string]: string }>({});
+  const [text, setText] = useState('');
+  const [email, setEmail] = useState('');
+  const [posting, setPosting] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const q = query(collection(db, 'posts'), orderBy('timestamp', 'desc'));
@@ -48,7 +58,6 @@ export default function TimelinePage() {
       setLoading(false);
 
       fetchedPosts.forEach((post) => {
-        // Listen for likes
         const likesRef = collection(db, 'posts', post.id, 'likes');
         onSnapshot(likesRef, (likeSnapshot) => {
           setLikes((prev) => ({
@@ -65,7 +74,6 @@ export default function TimelinePage() {
           }
         });
 
-        // Listen for comments
         const commentsRef = collection(db, 'posts', post.id, 'comments');
         const commentsQuery = query(commentsRef, orderBy('timestamp', 'asc'));
         onSnapshot(commentsQuery, (commentSnapshot) => {
@@ -101,75 +109,156 @@ export default function TimelinePage() {
   const handleCommentSubmit = async (postId: string) => {
     const uid = auth.currentUser?.uid;
     const user = auth.currentUser;
-    const text = newComment[postId]?.trim();
+    const commentText = newComment[postId]?.trim();
 
-    if (!uid || !text) return;
+    if (!uid || !commentText) return;
 
     const commentsRef = collection(db, 'posts', postId, 'comments');
     await addDoc(commentsRef, {
       uid,
       displayName: user.displayName || 'Anonymous',
-      text,
+      photoURL: user.photoURL || null,
+      text: commentText,
       timestamp: Date.now(),
     });
 
     setNewComment((prev) => ({ ...prev, [postId]: '' }));
   };
 
+  const handlePostSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!text.trim() || !email.trim()) return;
+
+    const user = auth.currentUser;
+    if (!user) return;
+
+    setPosting(true);
+
+    try {
+      const docRef = await addDoc(collection(db, 'posts'), {
+        uid: user.uid,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+        text: text.trim(),
+        timestamp: serverTimestamp(),
+      });
+
+      const postLink = `${window.location.origin}/post/${docRef.id}`;
+
+      await emailjs.send(
+        'service_ypzr4dg',
+        'template_567fc2a',
+        {
+          email: email,
+          from_name: user.displayName || 'Anonymous',
+          message: text.trim(),
+          post_link: postLink,
+        },
+        'q1XMFHhBE9upOF5cB'
+      );
+
+      setText('');
+      setEmail('');
+    } catch (err) {
+      console.error('Error posting ripple or sending email:', err);
+    } finally {
+      setPosting(false);
+    }
+  };
+
   return (
-    <div className="max-w-md mx-auto mt-10 p-4">
-      <h1 className="text-2xl font-bold mb-4 text-center">Timeline</h1>
-      {loading && <p className="text-center">Loading ripples...</p>}
+    <div className="content">
+      <div className="post rainbow-shape">
+        <form onSubmit={handlePostSubmit}>
+          <textarea
+            className="post__textarea"
+            placeholder="Describe your good deed..."
+            rows={4}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+          />
+          <input
+            type="email"
+            placeholder="Recipient's email"
+            className="w-full border rounded p-2 mb-4"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <button
+            type="submit"
+            className="post-button"
+            disabled={posting}
+          >
+            {posting ? 'Posting...' : 'Post & Send'}
+          </button>
+        </form>
+      </div>
+
+      {loading && <p className="loading">Loading ripples...</p>}
       {!loading && posts.length === 0 && <p className="text-center">No ripples yet.</p>}
-      {posts.map(post => (
-        <div key={post.id} className="bg-white rounded shadow p-4 mb-4">
-          <div className="flex items-center mb-2">
-            {post.photoURL && (
-              <img src={post.photoURL} alt="User avatar" className="w-8 h-8 rounded-full mr-2" />
-            )}
-            <span className="font-semibold">{post.displayName || 'Anonymous'}</span>
-          </div>
-          <p className="mb-2">{post.text}</p>
-          \  {post.recipient && (
-    <p className="text-sm text-gray-500 mb-2">🌱 Sent to: {post.recipient}</p>
-  )}
-          <div className="flex items-center mb-2">
-            <button
-              onClick={() => toggleLike(post.id)}
-              className={`text-sm mr-2 ${userLikes[post.id] ? 'text-red-500' : 'text-gray-500'} hover:underline`}
-            >
-              ❤️ {likes[post.id] || 0}
-            </button>
-          </div>
-
-          {/* Comments */}
-          <div className="comments mb-2">
-            {comments[post.id]?.map((comment) => (
-              <div key={comment.id} className="text-sm text-gray-700 mb-1">
-                <span className="font-semibold">{comment.displayName || 'Anon'}:</span> {comment.text}
+      <div className="timeline">
+        {posts.map(post => (
+          <div key={post.id} className="timeline__post ">
+            <div className="timeline__post__content ">
+              {post.photoURL && (
+                <img src={post.photoURL} alt="User avatar" className="w-8 h-8 rounded-full mr-2" />
+              )}
+              <span className="timeline__post__user">{post.displayName || 'Anonymous'}</span>
+            </div>
+            <div className="timeline__post__text rainbow-text">
+              <SlabText text={post.text} paddingFactor={0.92} />
               </div>
-            ))}
-          </div>
+            {post.recipient && (
+              <p className="timeline__post_sent-to">@{post.recipient}</p>
+            )}
+            <div className="timeline__post__like">
+              <button
+                onClick={() => toggleLike(post.id)}
+                className={`text-sm mr-2 ${userLikes[post.id] ? 'text-red-500' : 'text-gray-500'} hover:underline`}
+              >
+                ❤️ {likes[post.id] || 0}
+              </button>
+            </div>
 
-          <div className="flex items-center">
-            <input
-              type="text"
-              placeholder="Add comment..."
-              value={newComment[post.id] || ''}
-              onChange={(e) =>
-                setNewComment((prev) => ({ ...prev, [post.id]: e.target.value }))
-              }
-              className="flex-1 border rounded p-1 text-sm mr-2"
-            />
-            <button
-              onClick={() => handleCommentSubmit(post.id)}
-              className="text-sm text-blue-500 hover:underline"
-            >
-              Post
-            </button>
+            <div className="timeline__post__comments">
+              {comments[post.id]?.map((comment) => (
+                <div key={comment.id} className="timeline__post__comment">
+                  {comment.photoURL ? (
+                    <img
+                      src={comment.photoURL}
+                      alt={comment.displayName || 'Anon'}
+                      className="timeline__post__comment_profile"
+                    />
+                  ) : (
+                    <div className="no-photo" />
+                  )}
+                  <span className="timeline__post__comment_text">{comment.text}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Add comment form */}
+            <div className="flex items-center">
+              <input
+                type="text"
+                placeholder="Add comment..."
+                value={newComment[post.id] || ''}
+                onChange={(e) =>
+                  setNewComment((prev) => ({ ...prev, [post.id]: e.target.value }))
+                }
+                className="flex-1 border rounded p-1 text-sm mr-2"
+              />
+              <button
+                onClick={() => handleCommentSubmit(post.id)}
+                className="text-sm text-blue-500 hover:underline"
+              >
+                Post
+              </button>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }

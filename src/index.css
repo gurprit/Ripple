@@ -1,14 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Bitcount+Grid+Double:wght@100..900&display=swap');
-
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Libertinus+Mono&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Abril+Fatface&display=swap');
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
+  color: rgb(0, 0, 0);
+  background-color: white;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -18,7 +16,6 @@
 h1 {
   font-family: "Bitcount Grid Double", system-ui;
   font-optical-sizing: auto;
-  font-weight: <weight>;
   font-style: normal;
 }
 
@@ -30,13 +27,40 @@ a {
 a:hover {
   color: #535bf2;
 }
+input:not([type="image" i], [type="range" i], [type="checkbox" i], [type="radio" i]) {
+  background: white;
+}
 
 body {
   margin: 0;
   display: flex;
   place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  font-family: "Fredoka", sans-serif;
+  margin: 0;
+  background-repeat: no-repeat;
+  background-size: 10% 100%;
+  background-position: center;
+  font-weight: 400;
+  font-style: normal;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 10%;
+}
+
+/* 🌈 Static rainbow background, fixed behind everything */
+body::before {
+  position: fixed;
+    top: 0px;
+    left: 50%;
+    transform: translateX(-50%);
+    height: 100vh;
+    width: 100vh;
+    width: 5%;
+    transition: width 1s ease-out;
+    background: linear-gradient(red 0%, red 16.66%, orange 16.66%, orange 33.33%, yellow 33.33%, yellow 50%, green 50%, green 66.66%, blue 66.66%, blue 83.33%, violet 83.33%, violet 100%) no-repeat;
+    z-index: -1;
+    pointer-events: none;
 }
 
 h1 {
@@ -51,9 +75,14 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+
   cursor: pointer;
   transition: border-color 0.25s;
+  color: black;
+}
+
+button.post-button {
+  background-color: white;
 }
 button:hover {
   border-color: #646cff;
@@ -75,22 +104,104 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
-
-
-body {
+.post {
+  background: white;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 400px;
-  margin: auto;
+  justify-content: space-evenly;
+  align-content: stretch;
+  padding: 10px;
+  width: 65%;
+  padding: 30px 40px;
+}
+.post form {
+  width : 100%;
+}
+.post__textarea {
+  width: 100%;
+  background: white;
+  padding: 10px 0px 0px 0px;
+  margin: 0px 0px 0px 0px;
+  font-family: "Fredoka", sans-serif;
+  font-size: 23px;
+  color: black;
+  height: 40px;
+  border: none;
 }
 
-.main-nav a {
-  padding: 0 10px;
+.post__textarea::-webkit-input-placeholder {
+  color: black;
+  }
+  
+  .post__textarea:-moz-placeholder { /* Firefox 18- */
+  color: black;  
+  }
+  
+  .post__textarea::-moz-placeholder {  /* Firefox 19+ */
+  color:#black;  
+  }
+  
+  .post__textarea:-ms-input-placeholder {
+  color: black;  
+  }
+
+.post input {
+  font-size: 16px;
 }
+
+.post button {
+  float :right;
+}
+
+
+
+nav {
+  position: fixed;
+  top: 0;
+  right: 20px;
+}
+
+nav a {
+display: block;
+color: black;
+}
+
+.welcome {
+  font-family: "Fredoka", sans-serif;
+  line-height: 10px;
+} 
+
+.intro {
+  font-family: "Libertinus Mono", monospace;
+  font-size: 20px;
+}
+
+.rainbow-bkgrd {
+  position: fixed;
+  top: 0px;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 100vh;
+  width: 100vw;
+  transition: width 1s ease-out;
+  background: linear-gradient(red 0%, red 16.66%, orange 16.66%, orange 33.33%, yellow 33.33%, yellow 50%, green 50%, green 66.66%, blue 66.66%, blue 83.33%, violet 83.33%, violet 100%) no-repeat;
+  z-index: -1;
+  pointer-events: none;
+  filter: grayscale(1) contrast(0.5) brightness(.50);
+}
+
+.sign-in {
+  font-family: "Libertinus Mono", monospace;
+}
+
+.timeline {
+  margin: 40px 0 0;
+}
+
 .timeline__post {
   position: relative;
   padding: 0 0 20px ;
+  width: 100%;
+  float: left;
 }
 
 .timeline__post__content {
@@ -99,15 +210,117 @@ body {
 
 .timeline__post__content img {
   width: 50px;
+  border-radius: 100%;
+  border: 5px solid black;
+  position: relative;
+  z-index: 1;
 }
 
 .timeline__post__text {
-  background: white;
-  color: black;
-  padding: 0 5px;
-  font-size: 32px;
+  font-family: 'Abril Fatface';
+  color: white;
+  padding: 0 0px;
+  margin: 0;
+  font-size: 27px;
+  line-height: 28px;
+  float: left;
+  width: 100%;
+  text-transform:uppercase; 
+}
+.timeline__post__user {
+  position: relative;
+  z-index: 0;
+  font-family: "Libertinus Mono", monospace;
+  font-weight: 400;
+  font-style: normal;
+  margin: 0 0px 33px -27px;
+  padding: 0px 10px 0px 25px;
+  background: black;
+  color: white;
+  letter-spacing: -1px;
 }
 
-.profile header img{
+
+.timeline__post_sent-to {
+  font-family: "Libertinus Mono", monospace;
+  font-weight: 400;
+  font-style: normal;
+  margin: 0 0px 25px -1px;
+  padding: 0px 10px 3px 10px;
+  background: #575757;
+  color: white;
+  font-size: 12px;
   float: left;
+}
+
+.timeline__post__like {
+  display: block;
+  clear: both;
+}
+
+.timeline__post__comments {
+  font-family: "Fredoka", sans-serif;
+  font-size: 24px;
+}
+
+.timeline__post__comment {
+  padding: 10px;
+  margin: 10px;
+}
+
+.profile header img {
+  float: left;
+}
+.slab-line {
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+
+
+/* 🌈 General .rainbow class that works for both text and non-text elements */
+.rainbow {
+  position: relative;
+  color: transparent; /* Make text transparent */
+  background: linear-gradient(red 0%, red 16.66%, orange 16.66%, orange 33.33%, yellow 33.33%, yellow 50%, green 50%, green 66.66%, blue 66.66%, blue 83.33%, violet 83.33%, violet 100%) no-repeat;
+  background-size: 109% 100%;
+  background-position: 0 0;
+  background-attachment: fixed; /* Ensure background stays fixed on scroll */
+  background-clip: text;
+  -webkit-background-clip: text;
+
+  /* 👇 Add mask fallback for non-text elements */
+  -webkit-mask-image: linear-gradient(white, white);
+  mask-image: linear-gradient(white, white);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+
+}
+
+.rainbow-text {
+  color: transparent;
+  background: linear-gradient(red 0%, red 16.66%, orange 16.66%, orange 33.33%, yellow 33.33%, yellow 50%, green 50%, green 66.66%, blue 66.66%, blue 83.33%, violet 83.33%, violet 100%) no-repeat;
+
+  background-size: 109% 100%;
+  background-attachment: fixed;
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+
+.rainbow-shape {
+  background: linear-gradient(red 0%, red 16.66%, orange 16.66%, orange 33.33%, yellow 33.33%, yellow 50%, green 50%, green 66.66%, blue 66.66%, blue 83.33%, violet 83.33%, violet 100%) no-repeat;
+
+  background-size: 109% 100%;
+  background-attachment: fixed;
+  -webkit-mask-image: linear-gradient(white, white);
+  mask-image: linear-gradient(white, white);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+
+.word, .line {
+  display: block;
+  line-height: 1.2; /* Adjust line height relative to font size */
+  margin-bottom: 5px; /* Add margin between words */
+
 }
