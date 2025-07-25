@@ -17,16 +17,17 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-gray-100 p-4">
-      <h1 className="welcome">Welcome to Ripple</h1>
-      <p className="intro">
-        Share a good deed and inspire your friends.
-      </p>
-      <button
-        onClick={handleGoogleLogin}
-        className="sign-in">
-        Sign in with Google
-      </button>
+    <div className="welcome">
+        <div className="content">
+            <h1 className="rainbow-text">RIPPLE</h1>
+            <p className="intro">Share a good deed and inspire your friends.</p>
+            <button
+                onClick={handleGoogleLogin}
+                className="sign-in">
+                Sign in with Google
+            </button>
+      </div>
     </div>
+
   );
 }

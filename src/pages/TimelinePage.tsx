@@ -167,8 +167,8 @@ export default function TimelinePage() {
   };
 
   return (
-    <div className="content">
-      <div className="post rainbow-shape">
+    <div className="timeline content">
+      <div className="post">
         <form onSubmit={handlePostSubmit}>
           <textarea
             className="post__textarea"
@@ -180,7 +180,7 @@ export default function TimelinePage() {
           <input
             type="email"
             placeholder="Recipient's email"
-            className="w-full border rounded p-2 mb-4"
+            className="post__email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -220,7 +220,23 @@ export default function TimelinePage() {
                 ❤️ {likes[post.id] || 0}
               </button>
             </div>
-
+            <div className="timeline__post__commentsform">
+              <input
+                type="text"
+                placeholder="Add comment..."
+                value={newComment[post.id] || ''}
+                onChange={(e) =>
+                  setNewComment((prev) => ({ ...prev, [post.id]: e.target.value }))
+                }
+                className="flex-1 border rounded p-1 text-sm mr-2"
+              />
+              <button
+                onClick={() => handleCommentSubmit(post.id)}
+                className="postcomment-button"
+              >
+                Post
+              </button>
+            </div>
             <div className="timeline__post__comments">
               {comments[post.id]?.map((comment) => (
                 <div key={comment.id} className="timeline__post__comment">
@@ -236,25 +252,6 @@ export default function TimelinePage() {
                   <span className="timeline__post__comment_text">{comment.text}</span>
                 </div>
               ))}
-            </div>
-
-            {/* Add comment form */}
-            <div className="flex items-center">
-              <input
-                type="text"
-                placeholder="Add comment..."
-                value={newComment[post.id] || ''}
-                onChange={(e) =>
-                  setNewComment((prev) => ({ ...prev, [post.id]: e.target.value }))
-                }
-                className="flex-1 border rounded p-1 text-sm mr-2"
-              />
-              <button
-                onClick={() => handleCommentSubmit(post.id)}
-                className="text-sm text-blue-500 hover:underline"
-              >
-                Post
-              </button>
             </div>
           </div>
         ))}

@@ -104,28 +104,63 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
-.post {
+.welcome .content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  align-content: center;
+  height: 100vh;
+}
+.welcome h1 {
+  font-family: 'Abril Fatface';
+  font-size: clamp(16px, 20vw, 250px);
+  padding: 0;
+  margin: 0;
+}
+.welcome h1 span {
+  font-family: "Libertinus Mono", monospace;
+  font-size: clamp(16px, 10vw, 100px);
+  display: block;
+}
+
+.welcome .intro {
+  font-family: "Fredoka", sans-serif;
+  font-size: clamp(18px, 3vw, 45px);
+  color: white;
+}
+
+.sign-in {
   background: white;
+  font-size: clamp(16px, 2vw, 32px);
+}
+
+.post {
   display: flex;
   justify-content: space-evenly;
   align-content: stretch;
   padding: 10px;
   width: 65%;
-  padding: 30px 40px;
+  padding: 10vh 40px;
 }
 .post form {
   width : 100%;
 }
-.post__textarea {
+.post input.post__email {
+  font-size: 23px;
+}
+textarea.post__textarea {
   width: 100%;
-  background: white;
-  padding: 10px 0px 0px 0px;
-  margin: 0px 0px 0px 0px;
+  border: solid black 1px;
+  padding: 10px 0px 0px 15px;
+  margin: 0px 0px 0px -15px;
   font-family: "Fredoka", sans-serif;
   font-size: 23px;
   color: black;
   height: 40px;
-  border: none;
+  border: 4px black solid;
+  background: white;
+  border-radius: 10px;
 }
 
 .post__textarea::-webkit-input-placeholder {
@@ -152,8 +187,6 @@ button:focus-visible {
   float :right;
 }
 
-
-
 nav {
   position: fixed;
   top: 0;
@@ -163,16 +196,6 @@ nav {
 nav a {
 display: block;
 color: black;
-}
-
-.welcome {
-  font-family: "Fredoka", sans-serif;
-  line-height: 10px;
-} 
-
-.intro {
-  font-family: "Libertinus Mono", monospace;
-  font-size: 20px;
 }
 
 .rainbow-bkgrd {
@@ -189,17 +212,13 @@ color: black;
   filter: grayscale(1) contrast(0.5) brightness(.50);
 }
 
-.sign-in {
-  font-family: "Libertinus Mono", monospace;
-}
-
 .timeline {
   margin: 40px 0 0;
 }
 
 .timeline__post {
   position: relative;
-  padding: 0 0 20px ;
+  padding: 0 0 100px;
   width: 100%;
   float: left;
 }
@@ -219,8 +238,6 @@ color: black;
 .timeline__post__text {
   font-family: 'Abril Fatface';
   color: white;
-  padding: 0 0px;
-  margin: 0;
   font-size: 27px;
   line-height: 28px;
   float: left;
@@ -233,11 +250,12 @@ color: black;
   font-family: "Libertinus Mono", monospace;
   font-weight: 400;
   font-style: normal;
-  margin: 0 0px 33px -27px;
+  margin: 3px 0px 33px -22px;
   padding: 0px 10px 0px 25px;
   background: black;
   color: white;
   letter-spacing: -1px;
+  top: 13px;
 }
 
 
@@ -261,11 +279,43 @@ color: black;
 .timeline__post__comments {
   font-family: "Fredoka", sans-serif;
   font-size: 24px;
+  font-weight: 400;
 }
 
 .timeline__post__comment {
   padding: 10px;
   margin: 10px;
+  color: white;
+}
+.timeline__post__commentsform {
+  margin: 20px;
+}
+.timeline__post__commentsform input {
+  width: 30%;
+  border: solid black 1px;
+  padding: 10px 0px 0px 15px;
+  margin: 0px 0px 0px -15px;
+  font-family: "Fredoka", sans-serif;
+  font-size: 18px;
+  color: black;
+  height: 40px;
+  border: 4px black solid;
+  background: white;
+  border-radius: 10px;
+}
+
+.postcomment-button {
+  background: lightgray;
+  border: none;
+  transform: translate(10px, -5px);
+}
+
+.timeline__post__comment_profile {
+  width:30px;
+  overflow: hidden;
+  border-radius: 100%;
+  margin: 0 11px -10px 0px;
+
 }
 
 .profile header img {
@@ -323,4 +373,9 @@ color: black;
   line-height: 1.2; /* Adjust line height relative to font size */
   margin-bottom: 5px; /* Add margin between words */
 
+}
+
+.slab-text-container {
+  width: 100%;
+  margin: 0 auto;
 }
