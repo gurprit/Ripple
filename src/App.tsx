@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import LoginPage from './pages/LoginPage';
-import HomePage from './pages/HomePage';
 import ProfilePage from './pages/ProfilePage';
 import PostPage from './pages/PostPage'; 
 import RequireAuth from './components/RequireAuth';
