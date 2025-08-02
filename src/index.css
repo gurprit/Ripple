@@ -114,6 +114,7 @@ button:focus-visible {
 }
 .welcome h1 {
   font-family: 'Abril Fatface';
+  line-height: clamp(16px, 15vw, 250px);
   font-size: clamp(16px, 20vw, 250px);
   padding: 0;
   margin: 0;
@@ -270,10 +271,49 @@ color: black;
   font-size: 12px;
   float: left;
 }
-
+.timeline__post__commentscontainewr {
+  float: right;
+  width: 45%;
+}
 .timeline__post__like {
-  display: block;
-  clear: both;
+position: relative;
+    display: block;
+    float: left;
+    width: 90px;
+}
+.timeline__post__like_count {
+    position: absolute;
+    bottom: 57px;
+    right: 15px;
+    color: BLACK;
+    background: white;
+    border-radius: 100%;
+    width: 20px;
+    text-align: center;
+    height: 20px;
+}
+.timeline__post__like_button {
+  position: relative;
+  transform: translate(-30px, -16px);
+  width: 150px;
+  height: 150px;
+}
+
+.timeline__post__like_button::after {
+    display: block;
+    position: absolute;
+    top: 37px;
+    left: 40px;
+    z-index: -1;
+    content: '';
+    width: 70px;
+    height: 70px;
+    background: white;
+    border-radius: 100%;
+}
+.timeline__post__like_button::hover:after{
+    background: lightgrey;
+
 }
 
 .timeline__post__comments {
@@ -288,10 +328,12 @@ color: black;
   color: white;
 }
 .timeline__post__commentsform {
-  margin: 20px;
+    margin: 20px;
+    display: block;
+    width: 78%;
 }
 .timeline__post__commentsform input {
-  width: 30%;
+  width: 70%;
   border: solid black 1px;
   padding: 10px 0px 0px 15px;
   margin: 0px 0px 0px -15px;

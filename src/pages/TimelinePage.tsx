@@ -15,7 +15,7 @@ import { auth, db } from '../services/firebase';
 import emailjs from '@emailjs/browser';
 import { useNavigate } from 'react-router-dom';
 import SlabText from '../components/SlabText';
-
+import HeartButton from '../components/HeartButton';
 
 interface Post {
   id: string;
@@ -200,7 +200,7 @@ export default function TimelinePage() {
       <div className="timeline">
         {posts.map(post => (
           <div key={post.id} className="timeline__post ">
-            <div className="timeline__post__content ">
+            <div className="timeline__post__content">
               {post.photoURL && (
                 <img src={post.photoURL} alt="User avatar" className="w-8 h-8 rounded-full mr-2" />
               )}
@@ -213,13 +213,13 @@ export default function TimelinePage() {
               <p className="timeline__post_sent-to">@{post.recipient}</p>
             )}
             <div className="timeline__post__like">
-              <button
-                onClick={() => toggleLike(post.id)}
-                className={`text-sm mr-2 ${userLikes[post.id] ? 'text-red-500' : 'text-gray-500'} hover:underline`}
-              >
-                ❤️ {likes[post.id] || 0}
-              </button>
+            <HeartButton
+              liked={userLikes[post.id]}
+              onClick={() => toggleLike(post.id)}
+            />
+            <span className="timeline__post__like_count">{likes[post.id] || 0}</span>
             </div>
+            <div className="timeline__post__commentscontainewr">
             <div className="timeline__post__commentsform">
               <input
                 type="text"
@@ -252,6 +252,7 @@ export default function TimelinePage() {
                   <span className="timeline__post__comment_text">{comment.text}</span>
                 </div>
               ))}
+            </div>
             </div>
           </div>
         ))}
