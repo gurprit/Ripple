@@ -1,69 +1,64 @@
-# React + TypeScript + Vite
+# 🌊 Ripple
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Ripple** is a positive, wholesome social media concept designed to spread kindness.  
+Users post good deeds they've done — or good deeds done *for* them — and tag friends to keep the ripple going.
 
-Currently, two official plugins are available:
+This is a personal side project built with **React**, **TypeScript**, and **Vite**, exploring modern front-end development practices, clean component architecture, and positivity-driven user experience.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## Expanding the ESLint configuration
+## ✨ Key Features (Planned)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- 🌱 Share acts of kindness — big or small
+- 💬 Tag friends to invite them to contribute their own ripple
+- 🌀 Visualize ripple chains — how one act leads to many
+- 🧩 Component-driven UI using React + TypeScript
+- 🎨 Planned styling via Tailwind or styled-components
+- ✅ Functional testing (coming soon) with Jest & React Testing Library
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+## 🛠 Tech Stack
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- [React](https://reactjs.org/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [Vite](https://vitejs.dev/)
+- [Jest](https://jestjs.io/) + [React Testing Library](https://testing-library.com/) *(planned)*
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 🚧 Project Status
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+This project is in early development.  
+Initial scaffolding is complete and the component system is being built out.
+
+Next steps:
+- Build ripple-post UI components
+- Add user tagging and mock data interactions
+- Style the feed using custom Css
+- Implement tests with Jest
+
+---
+
+## 🔧 Getting Started
+
+Clone the repo and run locally:
+
+```bash
+git clone https://github.com/gurprit/Ripple.git
+cd Ripple
+npm install
+npm run dev
+
+🧠 Inspiration
+Social media often amplifies negativity — Ripple is an experiment in flipping the script.
+By creating a space that rewards and spreads kindness, we hope to build momentum for good, one act at a time.
+
+📸 Screenshots
+Coming soon — stay tuned!
+
+📬 Feedback & Ideas
+Got thoughts? Open an issue or drop a suggestion — collaboration is always welcome.
+
+📄 License
+This project is open source and available under the MIT License.
