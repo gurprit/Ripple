@@ -50,15 +50,3 @@ cd Ripple
 npm install
 npm run dev
 
-🧠 Inspiration
-Social media often amplifies negativity — Ripple is an experiment in flipping the script.
-By creating a space that rewards and spreads kindness, we hope to build momentum for good, one act at a time.
-
-📸 Screenshots
-Coming soon — stay tuned!
-
-📬 Feedback & Ideas
-Got thoughts? Open an issue or drop a suggestion — collaboration is always welcome.
-
-📄 License
-This project is open source and available under the MIT License.
