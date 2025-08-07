@@ -150,10 +150,11 @@ export default function TimelinePage() {
         'service_ypzr4dg',
         'template_567fc2a',
         {
-          email: email,
+          to_email: email,
           from_name: user.displayName || 'Anonymous',
-          message: text.trim(),
+          post_text: text.trim(),
           post_link: postLink,
+          app_name: 'Ripple',
         },
         'q1XMFHhBE9upOF5cB'
       );

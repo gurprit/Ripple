@@ -150,6 +150,7 @@ button:focus-visible {
 }
 .post input.post__email {
   font-size: 23px;
+  color: black;
 }
 textarea.post__textarea {
   width: 100%;
