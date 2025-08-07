@@ -16,6 +16,7 @@ import emailjs from '@emailjs/browser';
 import { useNavigate } from 'react-router-dom';
 import SlabText from '../components/SlabText';
 import HeartButton from '../components/HeartButton';
+import { Link } from 'react-router-dom';
 
 interface Post {
   id: string;
@@ -199,16 +200,16 @@ export default function TimelinePage() {
       {!loading && posts.length === 0 && <p className="text-center">No ripples yet.</p>}
       <div className="timeline">
         {posts.map(post => (
-          <div key={post.id} className="timeline__post ">
+          <div key={post.id} className="timeline__post">
             <div className="timeline__post__content">
               {post.photoURL && (
                 <img src={post.photoURL} alt="User avatar" className="w-8 h-8 rounded-full mr-2" />
               )}
               <span className="timeline__post__user">{post.displayName || 'Anonymous'}</span>
             </div>
-            <div className="timeline__post__text rainbow-text">
+            <Link to={`/post/${post.id}`} className="timeline__post__text rainbow-text">
               <SlabText text={post.text} paddingFactor={0.92} />
-              </div>
+            </Link>
             {post.recipient && (
               <p className="timeline__post_sent-to">@{post.recipient}</p>
             )}
@@ -220,23 +221,23 @@ export default function TimelinePage() {
             <span className="timeline__post__like_count">{likes[post.id] || 0}</span>
             </div>
             <div className="timeline__post__commentscontainewr">
-            <div className="timeline__post__commentsform">
-              <input
-                type="text"
-                placeholder="Add comment..."
-                value={newComment[post.id] || ''}
-                onChange={(e) =>
-                  setNewComment((prev) => ({ ...prev, [post.id]: e.target.value }))
-                }
-                className="flex-1 border rounded p-1 text-sm mr-2"
-              />
-              <button
-                onClick={() => handleCommentSubmit(post.id)}
-                className="postcomment-button"
-              >
+              <div className="timeline__post__commentsform">
+                <input
+                  type="text"
+                  placeholder="Add comment..."
+                  value={newComment[post.id] || ''}
+                  onChange={(e) =>
+                    setNewComment((prev) => ({ ...prev, [post.id]: e.target.value }))
+                  }
+                  className="flex-1 border rounded p-1 text-sm mr-2"
+                />
+                <button
+                  onClick={() => handleCommentSubmit(post.id)}
+                  className="postcomment-button"
+                >
                 Post
-              </button>
-            </div>
+                </button>
+              </div>
             <div className="timeline__post__comments">
               {comments[post.id]?.map((comment) => (
                 <div key={comment.id} className="timeline__post__comment">

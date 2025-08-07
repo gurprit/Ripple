@@ -11,8 +11,11 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  width: 100%;
 }
-
+#root {
+  width: 100%;
+}
 h1 {
   font-family: "Bitcount Grid Double", system-ui;
   font-optical-sizing: auto;
@@ -33,7 +36,6 @@ input:not([type="image" i], [type="range" i], [type="checkbox" i], [type="radio"
 
 body {
   margin: 0;
-  display: flex;
   place-items: center;
   font-family: "Fredoka", sans-serif;
   margin: 0;
@@ -42,10 +44,9 @@ body {
   background-position: center;
   font-weight: 400;
   font-style: normal;
-  display: flex;
   justify-content: center;
   align-items: center;
-  margin: 0 10%;
+  margin: 0 20%;
 }
 
 /* 🌈 Static rainbow background, fixed behind everything */
@@ -297,6 +298,7 @@ position: relative;
   transform: translate(-30px, -16px);
   width: 150px;
   height: 150px;
+  cursor: pointer;
 }
 
 .timeline__post__like_button::after {
@@ -420,4 +422,20 @@ position: relative;
 .slab-text-container {
   width: 100%;
   margin: 0 auto;
+}
+
+.slab-text {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  line-height: 1.1;
+  text-align: center;
+  font-family: 'Abril Fatface', serif;
+  max-width: 100%;
+}
+
+.slab-word {
+  font-size: clamp(18px, 6vw, 48px);
+  margin: 0 0.2em 0.2em 0;
+  white-space: nowrap;
 }
