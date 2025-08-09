@@ -6,6 +6,8 @@ import PostPage from './pages/PostPage';
 import RequireAuth from './components/RequireAuth';
 import TimelinePage from './pages/TimelinePage';
 import PostDetailPage from './pages/PostDetailPage';
+import RipplePage from './pages/RipplePage';
+
 
 
 function RainbowBackground() {
@@ -66,6 +68,7 @@ function App() {
         />
         <Route path="/post/:id" element={<PostDetailPage />} />
         <Route path="*" element={<Navigate to="/" />} />
+        <Route path="/ripple/:rippleId" element={<RipplePage />} />
       </Routes>
     </>
   );

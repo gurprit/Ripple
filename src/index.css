@@ -138,7 +138,6 @@ button:focus-visible {
 }
 
 .post {
-  display: flex;
   justify-content: space-evenly;
   align-content: stretch;
   padding: 10px;
@@ -268,10 +267,8 @@ color: black;
   font-style: normal;
   margin: 0 0px 25px -1px;
   padding: 0px 10px 3px 10px;
-  background: #575757;
   color: white;
   font-size: 12px;
-  float: left;
 }
 .timeline__post__commentscontainewr {
   float: right;
@@ -440,3 +437,30 @@ position: relative;
   margin: 0 0.2em 0.2em 0;
   white-space: nowrap;
 }
+.ripple-button-container {
+  float: left;
+  margin: 21px 10px;
+}
+.ripple-button {
+  background: white;
+  width: 110px;
+  display: flex;
+  border-radius: 10px;
+  align-items: center;
+  line-height: 13px;
+  color: black
+}
+
+.ripple-button .ripple-animation {
+  width: 100%;
+}
+
+.wave-ripple-animation {
+  position: absolute;
+  top: -15vw;
+  left: 0;
+   width: clamp(1150px, 100vw, 100vw);
+  z-index:-1;
+  filter: grayscale(1) brightness(1);
+}
+
