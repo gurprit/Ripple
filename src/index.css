@@ -22,6 +22,11 @@ h1 {
   font-style: normal;
 }
 
+h1.ripple-details-header {
+  padding: 0;
+  margin: 0;
+}
+
 a {
   font-weight: 500;
   color: #646cff;
@@ -142,7 +147,7 @@ button:focus-visible {
   align-content: stretch;
   padding: 10px;
   width: 65%;
-  padding: 10vh 40px;
+  padding: 8vh 40px;
 }
 .post form {
   width : 100%;
@@ -215,7 +220,7 @@ color: black;
 }
 
 .timeline {
-  margin: 40px 0 0;
+  margin: 0 0 40px;
 }
 
 .timeline__post {
@@ -239,12 +244,14 @@ color: black;
 
 .timeline__post__text {
   font-family: 'Abril Fatface';
-  color: white;
   font-size: 27px;
   line-height: 28px;
   float: left;
   width: 100%;
-  text-transform:uppercase; 
+  text-transform:uppercase;
+}
+.timeline__post__text:hover {
+  color: transparent;
 }
 .timeline__post__user {
   position: relative;
@@ -448,10 +455,27 @@ position: relative;
   border-radius: 10px;
   align-items: center;
   line-height: 13px;
-  color: black
+  color: black;
+  flex-direction: row-reverse;
+  padding: 0px 10px;
+  text-transform: uppercase;
+  font-family: "Abril Fatface";
+  font-size: 16px;
+  line-height: 14px;
+  text-align: right;
+}
+.ripple-button.large {
+  font-size: 19px;
+  line-height: 16px;
+  width: 230px;
 }
 
 .ripple-button .ripple-animation {
+  width: 100%;
+}
+
+.ripple-composer-container {
+  float: left;
   width: 100%;
 }
 
@@ -464,3 +488,10 @@ position: relative;
   filter: grayscale(1) brightness(1);
 }
 
+.timeline__post--highlight {
+
+}
+@keyframes postFlash {
+  0%   { background-color: rgba(124, 58, 237, 0.08); }
+  100% { background-color: transparent; }
+}

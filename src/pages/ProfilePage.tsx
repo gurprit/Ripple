@@ -1,3 +1,5 @@
+
+import type { User } from 'firebase/auth';
 import { auth, db } from '../services/firebase';
 import { useEffect, useState } from 'react';
 

@@ -30,7 +30,6 @@ const SlabText: React.FC<SlabTextProps> = ({
       const shortCount = line.filter(isShort).length;
 
       const nextWord = words[i + 1];
-      const lineHasLongWord = line.some(w => !isShort(w));
 
       const nextWordWillBreak =
         lineWordCount >= maxWordsPerLine ||

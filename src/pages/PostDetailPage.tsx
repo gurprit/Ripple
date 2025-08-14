@@ -13,6 +13,7 @@ import {
   setDoc
 } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
+import emailjs from '@emailjs/browser';
 import HeartButton from '../components/HeartButton';
 import SlabText from '../components/SlabText';
 import RippleAnimation from '../components/RippleAnimation';
@@ -25,12 +26,10 @@ interface Post {
   text: string;
   timestamp: any;
 
-  // Ripple fields (new)
   rippleId?: string;
   parentPostId?: string | null;
   generation?: number;
 
-  // Recipients (existing compatibility)
   recipients?: string[];
   recipient?: string | null;
 }
@@ -44,6 +43,8 @@ interface Comment {
   timestamp: any;
 }
 
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function PostDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -51,15 +52,18 @@ export default function PostDetailPage() {
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Likes state
   const [likeCount, setLikeCount] = useState(0);
   const [userLiked, setUserLiked] = useState(false);
 
-  // Comments state
   const [comments, setComments] = useState<Comment[]>([]);
-  const [newComment, setNewComment] = useState(''); // <-- single input (your previous code had a map by mistake)
+  const [newComment, setNewComment] = useState('');
 
-  // Fetch post once
+  // Inline composer for ripple continuation
+  const [showComposer, setShowComposer] = useState(false);
+  const [composeText, setComposeText] = useState('');
+  const [composeEmail, setComposeEmail] = useState('');
+  const [posting, setPosting] = useState(false);
+
   useEffect(() => {
     if (!id) return;
     (async () => {
@@ -72,21 +76,17 @@ export default function PostDetailPage() {
     })();
   }, [id]);
 
-  // Subscribe to likes
   useEffect(() => {
     if (!id) return;
     const likesRef = collection(db, 'posts', id, 'likes');
     const unsub = onSnapshot(likesRef, snap => {
       setLikeCount(snap.size);
       const uid = auth.currentUser?.uid;
-      if (uid) {
-        setUserLiked(snap.docs.some(d => d.id === uid));
-      }
+      if (uid) setUserLiked(snap.docs.some(d => d.id === uid));
     });
     return () => unsub();
   }, [id]);
 
-  // Subscribe to comments
   useEffect(() => {
     if (!id) return;
     const commentsRef = collection(db, 'posts', id, 'comments');
@@ -102,11 +102,8 @@ export default function PostDetailPage() {
     if (!uid || !id) return;
     const likeRef = doc(db, 'posts', id, 'likes', uid);
     const likeSnap = await getDoc(likeRef);
-    if (likeSnap.exists()) {
-      await deleteDoc(likeRef);
-    } else {
-      await setDoc(likeRef, { likedAt: Date.now() });
-    }
+    if (likeSnap.exists()) await deleteDoc(likeRef);
+    else await setDoc(likeRef, { likedAt: Date.now() });
   };
 
   const submitComment = async () => {
@@ -124,6 +121,70 @@ export default function PostDetailPage() {
     setNewComment('');
   };
 
+  const handleInlineSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!post) return;
+
+    const user = auth.currentUser;
+    const postText = composeText.trim();
+    const rawEmail = composeEmail.trim();
+    if (!user || !postText || !rawEmail) return;
+
+    const recipients = rawEmail
+      .split(/[,\s;]+/)
+      .map(e => e.trim())
+      .filter(Boolean);
+
+    const bad = recipients.find(r => !emailRegex.test(r));
+    if (bad) {
+      alert(`That email looks off: "${bad}". Please fix and try again.`);
+      return;
+    }
+
+    setPosting(true);
+    try {
+      const rippleId = post.rippleId || post.id; // fallback for older posts
+      const nextGen = (post.generation ?? 0) + 1;
+
+      const docRef = await addDoc(collection(db, 'posts'), {
+        uid: user.uid,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+        text: postText,
+        timestamp: serverTimestamp(),
+        recipients,
+        recipient: recipients[0] ?? null,
+
+        rippleId,
+        parentPostId: post.id,
+        generation: nextGen,
+      });
+
+      await setDoc(doc(db, 'posts', docRef.id), { rippleId }, { merge: true });
+
+      const postLink = `${window.location.origin}/post/${docRef.id}`;
+      await Promise.all(
+        recipients.map((to_email) =>
+          emailjs.send(
+            'service_ypzr4dg',
+            'template_567fc2a',
+            { to_email, from_name: user.displayName || 'Anonymous', post_text: postText, post_link: postLink, app_name: 'Ripple' },
+            'q1XMFHhBE9upOF5cB'
+          )
+        )
+      );
+
+      // Jump to the ripple page and highlight the new post
+      navigate(`/ripple/${rippleId}?new=${docRef.id}`);
+
+    } catch (err: any) {
+      console.error('Error posting ripple or sending email:', err?.text || err);
+      alert(`Couldn’t send email: ${err?.text || 'Unknown error'}`);
+    } finally {
+      setPosting(false);
+    }
+  };
+
   if (loading) return <p className="text-center mt-10">Loading ripple...</p>;
   if (!post)   return <p className="text-center mt-10">Ripple not found.</p>;
 
@@ -135,16 +196,9 @@ export default function PostDetailPage() {
         ← Back to timeline
       </Link>
 
-      {/* Post content */}
       <div className="timeline__post">
         <div className="timeline__post__content">
-          {post.photoURL && (
-            <img
-              src={post.photoURL}
-              alt="User avatar"
-              className="w-8 h-8 rounded-full mr-2"
-            />
-          )}
+          {post.photoURL && <img src={post.photoURL} alt="User avatar" className="w-8 h-8 rounded-full mr-2" />}
           <span className="timeline__post__user">{post.displayName || 'Anonymous'}</span>
         </div>
 
@@ -154,35 +208,21 @@ export default function PostDetailPage() {
 
         {(post.recipients?.length || post.recipient) && (
           <p className="timeline__post_sent-to">
-            @{
-              post.recipients?.length
-                ? post.recipients.join(', @')
-                : post.recipient
-            }
+            @{post.recipients?.length ? post.recipients.join(', @') : post.recipient}
           </p>
         )}
 
-            {/* Ripple snippet */}
-            {(typeof post.generation === 'number' || post.rippleId) && (
-              <div className="ripple-button-container">
-                {post.rippleId && (
-                  <Link to={`/ripple/${post.rippleId}`} className="ripple-button">
-                    <RippleAnimation /> View ripple
-                  </Link>
-                )}
-              </div>
+        {(typeof post.generation === 'number' || post.rippleId) && (
+          <div className="ripple-button-container">
+            {post.rippleId && (
+              <Link to={`/ripple/${post.rippleId}`} className="ripple-button">
+                <RippleAnimation /> View ripple
+              </Link>
             )}
+          </div>
+        )}
 
-        <div className="mt-3">
-          <button
-            onClick={() =>
-              navigate(`/?rippleId=${post.rippleId}&parent=${post.id}&gen=${nextGen}`)
-            }
-            className="px-3 py-1 bg-purple-600 text-white rounded text-sm"
-          >
-            Tag someone — keep it going
-          </button>
-        </div>
+
 
         {/* Likes */}
         <div className="timeline__post__like">
@@ -200,34 +240,70 @@ export default function PostDetailPage() {
               onChange={(e) => setNewComment(e.target.value)}
               className="flex-1 border rounded p-1 text-sm mr-2"
             />
-            <button
-              onClick={submitComment}
-              className="postcomment-button"
-              type="button"
-            >
-              Post
-            </button>
+            <button onClick={submitComment} className="postcomment-button" type="button">Post</button>
           </div>
 
           <div className="timeline__post__comments">
             {comments.map((c) => (
               <div key={c.id} className="timeline__post__comment">
                 {c.photoURL ? (
-                  <img
-                    src={c.photoURL}
-                    alt={c.displayName || 'Anon'}
-                    className="timeline__post__comment_profile"
-                  />
+                  <img src={c.photoURL} alt={c.displayName || 'Anon'} className="timeline__post__comment_profile" />
                 ) : (
                   <div className="w-6 h-6 bg-gray-300 rounded-full mr-2" />
                 )}
-                <div>
-                  <p className="timeline__post__comment_text">{c.text}</p>
-                </div>
+                <div><p className="timeline__post__comment_text">{c.text}</p></div>
               </div>
             ))}
           </div>
+        </div>
 
+        <div className="ripple-composer-container">
+          {!showComposer ? (
+            <button
+              onClick={() => setShowComposer(true)}
+              className="ripple-button large"
+            ><RippleAnimation />
+              Tag someone keep it going
+            </button>
+            
+
+
+
+          ) : (
+            <div className="post" style={{ marginTop: 8 }}>
+              <form onSubmit={handleInlineSubmit}>
+                <textarea
+                  className="post__textarea"
+                  placeholder="Describe your good deed..."
+                  rows={4}
+                  value={composeText}
+                  onChange={(e) => setComposeText(e.target.value)}
+                />
+                <input
+                  type="text"
+                  placeholder="Recipient email(s) — comma, space or semicolon separated"
+                  className="post__email"
+                  value={composeEmail}
+                  onChange={(e) => setComposeEmail(e.target.value)}
+                  required
+                />
+                <button type="submit" className="post-button" disabled={posting}>
+                  {posting ? 'Posting...' : 'Post & Send'}
+                </button>
+                <p style={{ marginTop: 8, fontSize: 12, color: '#6b7280' }}>
+                  Continuing ripple <code>{(post.rippleId || post.id).slice(0, 6)}…</code> · Wave {nextGen}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowComposer(false)}
+                  className="px-2 py-1"
+                  style={{ fontSize: 12, color: '#6b7280', textDecoration: 'underline', marginTop: 6 }}
+                >
+                  Cancel
+                </button>
+              </form>
+            </div>
+          )}
         </div>
       </div>
     </div>
