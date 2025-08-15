@@ -227,11 +227,11 @@ export default function TimelinePage() {
   };
 
   return (
-    <div className="timeline content">
-      <div className="post">
+    <div className="timeline">
+      <div className="ripple-composer">
         <form onSubmit={handlePostSubmit}>
           <textarea
-            className="post__textarea"
+            className="ripple-composer__textarea"
             placeholder="Describe your good deed..."
             rows={4}
             value={text}
@@ -240,14 +240,14 @@ export default function TimelinePage() {
           <input
             type="text"
             placeholder="Recipient email(s) — comma, space or semicolon separated"
-            className="post__email"
+            className="ripple-composer__email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
           <button
             type="submit"
-            className="post-button"
+            className="ripple-composer__button"
             disabled={posting}
           >
             {posting ? 'Posting...' : 'Post & Send'}
@@ -260,14 +260,14 @@ export default function TimelinePage() {
             </p>
           )}
         </form>
-<WaveRipple />
+        <WaveRipple />
         
       </div>
 
       {loading && <p className="loading">Loading ripples...</p>}
       {!loading && posts.length === 0 && <p className="text-center">No ripples yet.</p>}
 
-      <div className="timeline">
+      <div className="timeline-content">
         {posts.map(post => (
           <div key={post.id} className="timeline__post">
             <div className="timeline__post__content">

@@ -17,16 +17,9 @@
   width: 100%;
 }
 h1 {
-  font-family: "Bitcount Grid Double", system-ui;
   font-optical-sizing: auto;
   font-style: normal;
 }
-
-h1.ripple-details-header {
-  padding: 0;
-  margin: 0;
-}
-
 a {
   font-weight: 500;
   color: #646cff;
@@ -40,10 +33,9 @@ input:not([type="image" i], [type="range" i], [type="checkbox" i], [type="radio"
 }
 
 body {
-  margin: 0;
   place-items: center;
   font-family: "Fredoka", sans-serif;
-  margin: 0;
+  width: auto;
   background-repeat: no-repeat;
   background-size: 10% 100%;
   background-position: center;
@@ -52,6 +44,9 @@ body {
   justify-content: center;
   align-items: center;
   margin: 0 20%;
+  @media (max-width: 480px) {
+    margin: 0;
+  }
 }
 
 /* 🌈 Static rainbow background, fixed behind everything */
@@ -142,21 +137,35 @@ button:focus-visible {
   font-size: clamp(16px, 2vw, 32px);
 }
 
-.post {
+.ripple-composer {
   justify-content: space-evenly;
   align-content: stretch;
   padding: 10px;
   width: 65%;
   padding: 8vh 40px;
+  @media (max-width: 480px) {
+    padding: 20px 10px;
+    margin: auto;
+  }
 }
-.post form {
+.ripple-composer form {
   width : 100%;
+  @media (max-width: 480px) {
+    display: flex;
+    flex-direction: column;
+    align-content: space-between;
+    justify-content: space-evenly;
+    align-items: stretch;
+    gap: 5px;
+  }
+
+
 }
-.post input.post__email {
+input.ripple-composer__email {
   font-size: 23px;
   color: black;
 }
-textarea.post__textarea {
+textarea.ripple-composer__textarea {
   width: 100%;
   border: solid black 1px;
   padding: 10px 0px 0px 15px;
@@ -168,6 +177,9 @@ textarea.post__textarea {
   border: 4px black solid;
   background: white;
   border-radius: 10px;
+  @media (max-width: 480px) {
+  margin: 0px 0px 0px -15px;
+  }
 }
 
 .post__textarea::-webkit-input-placeholder {
@@ -198,6 +210,7 @@ nav {
   position: fixed;
   top: 0;
   right: 20px;
+  display: none;
 }
 
 nav a {
@@ -207,11 +220,10 @@ color: black;
 
 .rainbow-bkgrd {
   position: fixed;
-  top: 0px;
-  left: 50%;
-  transform: translateX(-50%);
-  height: 100vh;
-  width: 100vw;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
   transition: width 1s ease-out;
   background: linear-gradient(red 0%, red 16.66%, orange 16.66%, orange 33.33%, yellow 33.33%, yellow 50%, green 50%, green 66.66%, blue 66.66%, blue 83.33%, violet 83.33%, violet 100%) no-repeat;
   z-index: -1;
@@ -220,14 +232,26 @@ color: black;
 }
 
 .timeline {
-  margin: 0 0 40px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.timeline-content {
+  margin: 60px 0 40px;
+  @media (max-width: 480px) {
+    margin: 20px 0 40px;
+  }
 }
 
 .timeline__post {
   position: relative;
   padding: 0 0 100px;
   width: 100%;
-  float: left;
+  @media (max-width: 480px) {
+    padding: 0 40px 50px;
+    width: auto;
+    text-align: center;
+  }
 }
 
 .timeline__post__content {
@@ -280,6 +304,10 @@ color: black;
 .timeline__post__commentscontainewr {
   float: right;
   width: 45%;
+  @media (max-width: 480px) {
+    float: none;
+    width: 100%;
+  }
 }
 .timeline__post__like {
 position: relative;
@@ -338,6 +366,10 @@ position: relative;
     margin: 20px;
     display: block;
     width: 78%;
+    @media (max-width: 480px) {
+      margin: 0;
+      width: 100%;
+  }
 }
 .timeline__post__commentsform input {
   width: 70%;
@@ -474,11 +506,6 @@ position: relative;
   width: 100%;
 }
 
-.ripple-composer-container {
-  float: left;
-  width: 100%;
-}
-
 .wave-ripple-animation {
   position: absolute;
   top: -15vw;
@@ -486,11 +513,12 @@ position: relative;
    width: clamp(1150px, 100vw, 100vw);
   z-index:-1;
   filter: grayscale(1) brightness(1);
+  @media (max-width: 480px) {
+    top: 0;
+    width: 100%;
+  }
 }
 
-.timeline__post--highlight {
-
-}
 @keyframes postFlash {
   0%   { background-color: rgba(124, 58, 237, 0.08); }
   100% { background-color: transparent; }
