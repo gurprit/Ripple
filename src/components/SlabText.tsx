@@ -64,9 +64,6 @@ const SlabText: React.FC<SlabTextProps> = ({
     const rawWords = text.trim().split(/\s+/);
     const containerWidth = containerRef.current.offsetWidth * paddingFactor;
   
-    console.log('📦 Container width:', containerRef.current.offsetWidth, '→ adjusted:', containerWidth);
-    console.log('📚 Words:', rawWords);
-  
     const brokenLines = chunkWords(rawWords);
     const calculatedFontSizes: number[] = [];
   
@@ -88,8 +85,7 @@ const SlabText: React.FC<SlabTextProps> = ({
           max = mid - 1;
         }
       }
-  
-      console.log(`🧱 Line: "${line}" | FontSize: ${bestFit}px`);
+
       calculatedFontSizes.push(bestFit);
     });
   
@@ -102,7 +98,6 @@ const SlabText: React.FC<SlabTextProps> = ({
     layoutText();
 
     const handleResize = debounce(() => {
-      console.log('📐 Window resized – recalculating layout...');
       layoutText();
     });
 

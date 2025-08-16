@@ -266,9 +266,6 @@ export default function PostDetailPage() {
               Tag someone keep it going
             </button>
             
-
-
-
           ) : (
             <div className="post" style={{ marginTop: 8 }}>
               <form onSubmit={handleInlineSubmit}>
