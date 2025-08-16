@@ -312,7 +312,6 @@ export default function TimelinePage() {
                 )}
               </div>
             )}
-            {/*  
             <div className="timeline__post__commentscontainewr">
               <div className="timeline__post__commentsform">
                 <input
@@ -350,7 +349,6 @@ export default function TimelinePage() {
                 ))}
               </div>
             </div>
-            */}
           </div>
         ))}
       </div>
