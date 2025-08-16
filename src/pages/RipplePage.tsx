@@ -15,6 +15,7 @@ import { db, auth } from '../services/firebase';
 import emailjs from '@emailjs/browser';
 import WaveRipple from '../components/WaveRippleAnimation';
 import SlabText from '../components/SlabText';
+import RippleAnimation from '../components/RippleAnimation';
 
 interface Post {
   id: string;
@@ -194,10 +195,10 @@ export default function RipplePage() {
     <div className="ripple-detail">
       <WaveRipple />
       {/* Always-visible composer */}
-      <div ref={composerRef} className="post" style={{ marginTop: 12 }}>
+      <div ref={composerRef} className="ripple-composer">
         <form onSubmit={handleInlineSubmit}>
           <textarea
-            className="post__textarea"
+            className="ripple-composer__textarea"
             placeholder="Describe your good deed..."
             rows={4}
             value={composeText}
@@ -206,13 +207,14 @@ export default function RipplePage() {
           <input
             type="text"
             placeholder="Recipient email(s) — comma, space or semicolon separated"
-            className="post__email"
+            className="ripple-composer__email"
             value={composeEmail}
             onChange={(e) => setComposeEmail(e.target.value)}
             required
           />
-          <button type="submit" className="post-button" disabled={posting}>
-            {posting ? 'Posting...' : 'Post & Send'}
+          <button type="submit" className="ripple-button__composer ripple-button " disabled={posting}>
+            <RippleAnimation />
+            <span>{posting ? 'Posting...' : 'Post & Send'}</span>
           </button>
           <p style={{ marginTop: 8, fontSize: 12, color: '#6b7280' }}>
             Continuing ripple <code>{rippleId?.slice(0, 6)}…</code> · Next wave {(newest?.generation ?? -1) + 1}

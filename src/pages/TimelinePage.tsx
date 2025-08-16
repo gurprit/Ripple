@@ -228,6 +228,7 @@ export default function TimelinePage() {
 
   return (
     <div className="timeline">
+
       <div className="ripple-composer">
         <form onSubmit={handlePostSubmit}>
           <textarea
@@ -249,7 +250,8 @@ export default function TimelinePage() {
             type="submit"
             className="ripple-button__composer ripple-button "
             disabled={posting}
-          ><RippleAnimation />
+          >
+            <RippleAnimation />
             <span>{posting ? 'Posting...' : 'Post & Send'}</span>
           </button>
 
@@ -294,14 +296,6 @@ export default function TimelinePage() {
                 }
               </p>
             )}
-
-            <div className="timeline__post__like">
-              <HeartButton
-                liked={userLikes[post.id]}
-                onClick={() => toggleLike(post.id)}
-              />
-              <span className="timeline__post__like_count">{likes[post.id] || 0}</span>
-            </div>
             {/* Ripple snippet */}
             {(typeof post.generation === 'number' || post.rippleId) && (
               <div className="ripple-button-container">
@@ -312,6 +306,14 @@ export default function TimelinePage() {
                 )}
               </div>
             )}
+
+            <div className="timeline__post__like">
+              <HeartButton
+                liked={userLikes[post.id]}
+                onClick={() => toggleLike(post.id)}
+              />
+              <span className="timeline__post__like_count">{likes[post.id] || 0}</span>
+            </div>
             <div className="timeline__post__commentscontainewr">
               <div className="timeline__post__commentsform">
                 <input
