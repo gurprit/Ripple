@@ -264,6 +264,9 @@ color: black;
   @media (max-width: 480px) {
     width: auto;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 }
 
@@ -335,16 +338,17 @@ color: black;
   }
 }
 .timeline__post__like {
-position: relative;
-    display: block;
-    float: left;
-    width: 90px;
+  position: relative;
+  display: block;
+  float: left;
+  width: 90px;
+  height: 115px;
 }
 .timeline__post__like_count {
     position: absolute;
-    bottom: 57px;
-    right: 15px;
-    color: BLACK;
+    bottom: 13px;
+    right: 34px;
+    color: black;
     background: white;
     border-radius: 100%;
     width: 20px;
