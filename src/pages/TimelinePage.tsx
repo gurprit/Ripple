@@ -247,10 +247,10 @@ export default function TimelinePage() {
           />
           <button
             type="submit"
-            className="ripple-composer__button"
+            className="ripple-button__composer ripple-button "
             disabled={posting}
-          >
-            {posting ? 'Posting...' : 'Post & Send'}
+          ><RippleAnimation />
+            <span>{posting ? 'Posting...' : 'Post & Send'}</span>
           </button>
 
           {/* If composing as a child of an existing ripple, show a tiny hint */}
@@ -295,8 +295,6 @@ export default function TimelinePage() {
               </p>
             )}
 
-
-
             <div className="timeline__post__like">
               <HeartButton
                 liked={userLikes[post.id]}
@@ -314,6 +312,7 @@ export default function TimelinePage() {
                 )}
               </div>
             )}
+            {/*  
             <div className="timeline__post__commentscontainewr">
               <div className="timeline__post__commentsform">
                 <input
@@ -351,6 +350,7 @@ export default function TimelinePage() {
                 ))}
               </div>
             </div>
+            */}
           </div>
         ))}
       </div>

@@ -138,8 +138,7 @@ button:focus-visible {
 }
 
 .ripple-composer {
-  justify-content: space-evenly;
-  align-content: stretch;
+
   padding: 10px;
   width: 65%;
   padding: 8vh 40px;
@@ -150,8 +149,17 @@ button:focus-visible {
 }
 .ripple-composer form {
   width : 100%;
+    display: flex;
+            align-items: center;
+    flex-direction: column;
+    align-content: space-between;
+    justify-content: space-evenly;
+    align-items: stretch;
+    gap: 5px;
+
   @media (max-width: 480px) {
     display: flex;
+            align-items: center;
     flex-direction: column;
     align-content: space-between;
     justify-content: space-evenly;
@@ -164,6 +172,10 @@ button:focus-visible {
 input.ripple-composer__email {
   font-size: 23px;
   color: black;
+  padding: 8px;
+  @media (max-width: 480px) {
+    font-size: 18px;
+  }
 }
 textarea.ripple-composer__textarea {
   width: 100%;
@@ -178,7 +190,8 @@ textarea.ripple-composer__textarea {
   background: white;
   border-radius: 10px;
   @media (max-width: 480px) {
-  margin: 0px 0px 0px -15px;
+    margin: 0px 0px 0px -15px;
+    font-size: 21px;
   }
 }
 
@@ -245,10 +258,10 @@ color: black;
 
 .timeline__post {
   position: relative;
-  padding: 0 0 100px;
+  padding: 0 0 10px;
   width: 100%;
+  clear: both;
   @media (max-width: 480px) {
-    padding: 0 40px 50px;
     width: auto;
     text-align: center;
   }
@@ -256,6 +269,9 @@ color: black;
 
 .timeline__post__content {
   display: flex;
+  @media (max-width: 480px) {
+    justify-content: center;
+  }
 }
 
 .timeline__post__content img {
@@ -264,6 +280,10 @@ color: black;
   border: 5px solid black;
   position: relative;
   z-index: 1;
+  @media (max-width: 480px) {
+    position: absolute;
+    z-index: -1;
+  }
 }
 
 .timeline__post__text {
@@ -289,6 +309,10 @@ color: black;
   color: white;
   letter-spacing: -1px;
   top: 13px;
+  @media (max-width: 480px) {
+    padding: 0px 10px 0px 10px;
+    margin: 25px 0px 20px 0px;
+  }
 }
 
 
@@ -495,6 +519,7 @@ position: relative;
   font-size: 16px;
   line-height: 14px;
   text-align: right;
+  flex-basis: 30%;
 }
 .ripple-button.large {
   font-size: 19px;
@@ -502,8 +527,17 @@ position: relative;
   width: 230px;
 }
 
-.ripple-button .ripple-animation {
+.ripple-button__composer {
+  font-size: 23px;
+  width: 280px;
+  @media (max-width: 480px) {
+    width: 100%;
+  }
+}
+
+.ripple-button__composer .ripple-animation {
   width: 100%;
+  flex-basis: 30%; 
 }
 
 .wave-ripple-animation {
