@@ -228,9 +228,9 @@ export default function RipplePage() {
       </h1>
       {/* NEWEST → OLDEST (root ends up at the bottom) */}
       {posts.length === 0 ? (
-        <p className="content" style={{ marginTop: 16 }}>No posts in this ripple yet.</p>
+        <p className="content">No posts in this ripple yet.</p>
       ) : (
-        <section className="timeline" style={{ marginTop: 16 }}>
+        <section className="timeline">
           <div>
             {posts.map((p) => (
               <div
