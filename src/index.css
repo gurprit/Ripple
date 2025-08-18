@@ -314,6 +314,8 @@ color: black;
   color: white;
   letter-spacing: -1px;
   top: 13px;
+  text-transform: capitalize;
+  font-size: 15px;
   @media (max-width: 480px) {
     padding: 0px 10px 0px 10px;
     margin: 25px 0px 20px 0px;

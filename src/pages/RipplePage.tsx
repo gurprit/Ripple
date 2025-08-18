@@ -216,9 +216,6 @@ export default function RipplePage() {
             <RippleAnimation />
             <span>{posting ? 'Posting...' : 'Post & Send'}</span>
           </button>
-          <p style={{ marginTop: 8, fontSize: 12, color: '#6b7280' }}>
-            Continuing ripple <code>{rippleId?.slice(0, 6)}…</code> · Next wave {(newest?.generation ?? -1) + 1}
-          </p>
         </form>
       </div>
       <h1 className="ripple-details-header">
@@ -231,24 +228,24 @@ export default function RipplePage() {
         <p className="content">No posts in this ripple yet.</p>
       ) : (
         <section className="timeline">
-          <div>
+
             {posts.map((p) => (
               <div
                 className={`timeline__post ${highlightId === p.id ? 'timeline__post--highlight' : ''}`}
                 key={p.id}
               >
-                <Link to={`/post/${p.id}`}>
+                <Link to={`/post/${p.id}`}className="timeline__post__text rainbow-text">
                   <div className="timeline__post__content">
                     {p.photoURL ? (<img src={p.photoURL} alt="" />) : (<div />)}
                     <span className="timeline__post__user">{p.displayName || 'Anonymous'}</span>
                   </div>
-                  <div className="timeline__post__text rainbow-text">
+                  <div className="timeline__post__text ">
                     <SlabText text={p.text} paddingFactor={0.92} />
                   </div>
                 </Link>
               </div>
             ))}
-          </div>
+
         </section>
       )}
     </div>
