@@ -13,6 +13,12 @@ import {
   setDoc
 } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
+import {
+  GoogleAuthProvider,
+  signInWithPopup,
+  onAuthStateChanged,
+  type User
+} from 'firebase/auth';
 import emailjs from '@emailjs/browser';
 import HeartButton from '../components/HeartButton';
 import SlabText from '../components/SlabText';
@@ -63,6 +69,15 @@ export default function PostDetailPage() {
   const [composeText, setComposeText] = useState('');
   const [composeEmail, setComposeEmail] = useState('');
   const [posting, setPosting] = useState(false);
+
+  // Track auth state so UI updates if user logs in/out
+  const [currentUser, setCurrentUser] = useState<User | null | undefined>(undefined);
+  const isAuthed = !!currentUser;
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => setCurrentUser(u));
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -185,6 +200,18 @@ export default function PostDetailPage() {
     }
   };
 
+  const loginWithGoogle = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      // onAuthStateChanged will update UI; optionally open the composer right away:
+      setShowComposer(true);
+    } catch (e: any) {
+      console.error('Google sign-in failed:', e?.message || e);
+      alert('Sign-in failed. Please try again.');
+    }
+  };
+
   if (loading) return <p className="text-center mt-10">Loading ripple...</p>;
   if (!post)   return <p className="text-center mt-10">Ripple not found.</p>;
 
@@ -212,61 +239,30 @@ export default function PostDetailPage() {
           </p>
         )}
 
-        {(typeof post.generation === 'number' || post.rippleId) && (
-          <div className="ripple-button-container">
-            {post.rippleId && (
-              <Link to={`/ripple/${post.rippleId}`} className="ripple-button">
-                <RippleAnimation /> View ripple
-              </Link>
-            )}
-          </div>
-        )}
-
-
-
-        {/* Likes */}
-        <div className="timeline__post__like">
-          <HeartButton liked={userLiked} onClick={toggleLike} />
-          <span className="timeline__post__like_count">{likeCount}</span>
-        </div>
-
-        {/* Comments */}
-        <div className="timeline__post__commentscontainewr">
-          <div className="timeline__post__commentsform">
-            <input
-              type="text"
-              placeholder="Add comment..."
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              className="flex-1 border rounded p-1 text-sm mr-2"
-            />
-            <button onClick={submitComment} className="postcomment-button" type="button">Post</button>
-          </div>
-
-          <div className="timeline__post__comments">
-            {comments.map((c) => (
-              <div key={c.id} className="timeline__post__comment">
-                {c.photoURL ? (
-                  <img src={c.photoURL} alt={c.displayName || 'Anon'} className="timeline__post__comment_profile" />
-                ) : (
-                  <div className="w-6 h-6 bg-gray-300 rounded-full mr-2" />
-                )}
-                <div><p className="timeline__post__comment_text">{c.text}</p></div>
-              </div>
-            ))}
-          </div>
-        </div>
-
         <div className="ripple-composer-container">
-          {!showComposer ? (
+          {!isAuthed ? (
+            // NOT LOGGED IN → show Login with Google
+            <button
+              onClick={loginWithGoogle}
+              className="ripple-button large"
+              type="button"
+              aria-label="Login with Google to keep the ripple going"
+            >
+              {/* You can swap this for a Google logo or your Lottie if you like */}
+              Login with Google
+            </button>
+          ) : !showComposer ? (
+            // LOGGED IN, composer hidden → show "Tag someone"
             <button
               onClick={() => setShowComposer(true)}
               className="ripple-button large"
-            ><RippleAnimation />
+              type="button"
+            >
+              <RippleAnimation />
               Tag someone keep it going
             </button>
-            
           ) : (
+            // LOGGED IN, composer visible → show form
             <div className="post" style={{ marginTop: 8 }}>
               <form onSubmit={handleInlineSubmit}>
                 <textarea
@@ -302,6 +298,53 @@ export default function PostDetailPage() {
             </div>
           )}
         </div>
+
+        {(typeof post.generation === 'number' || post.rippleId) && (
+          <div className="ripple-button-container">
+            {post.rippleId && (
+              <Link to={`/ripple/${post.rippleId}`} className="ripple-button">
+                <RippleAnimation /> View ripple
+              </Link>
+            )}
+          </div>
+        )}
+
+        {/* Likes */}
+        <div className="timeline__post__like">
+          <HeartButton liked={userLiked} onClick={toggleLike} />
+          <span className="timeline__post__like_count">{likeCount}</span>
+        </div>
+
+        {/* Comments */}
+        <div className="timeline__post__commentscontainewr">
+          <div className="timeline__post__commentsform">
+            <input
+              type="text"
+              placeholder="Add comment..."
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              className="flex-1 border rounded p-1 text-sm mr-2"
+              disabled={!isAuthed}
+            />
+            <button onClick={submitComment} className="postcomment-button" type="button" disabled={!isAuthed}>
+              Post
+            </button>
+          </div>
+
+          <div className="timeline__post__comments">
+            {comments.map((c) => (
+              <div key={c.id} className="timeline__post__comment">
+                {c.photoURL ? (
+                  <img src={c.photoURL} alt={c.displayName || 'Anon'} className="timeline__post__comment_profile" />
+                ) : (
+                  <div className="w-6 h-6 bg-gray-300 rounded-full mr-2" />
+                )}
+                <div><p className="timeline__post__comment_text">{c.text}</p></div>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
     </div>
   );
