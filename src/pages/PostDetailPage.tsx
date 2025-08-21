@@ -239,7 +239,7 @@ export default function PostDetailPage() {
           </p>
         )}
 
-        <div className="ripple-composer-container">
+        <div>
           {!isAuthed ? (
             // NOT LOGGED IN → show Login with Google
             <button
@@ -248,7 +248,6 @@ export default function PostDetailPage() {
               type="button"
               aria-label="Login with Google to keep the ripple going"
             >
-              {/* You can swap this for a Google logo or your Lottie if you like */}
               Login with Google
             </button>
           ) : !showComposer ? (
@@ -263,10 +262,10 @@ export default function PostDetailPage() {
             </button>
           ) : (
             // LOGGED IN, composer visible → show form
-            <div className="post" style={{ marginTop: 8 }}>
+            <div className="ripple-composer">
               <form onSubmit={handleInlineSubmit}>
                 <textarea
-                  className="post__textarea"
+                  className="ripple-composer__textarea"
                   placeholder="Describe your good deed..."
                   rows={4}
                   value={composeText}
@@ -274,26 +273,22 @@ export default function PostDetailPage() {
                 />
                 <input
                   type="text"
+                  className="ripple-composer__email"
                   placeholder="Recipient email(s) — comma, space or semicolon separated"
-                  className="post__email"
                   value={composeEmail}
                   onChange={(e) => setComposeEmail(e.target.value)}
                   required
                 />
-                <button type="submit" className="post-button" disabled={posting}>
+                <button type="submit" className="ripple-button__composer ripple-button " disabled={posting}>
                   {posting ? 'Posting...' : 'Post & Send'}
-                </button>
+                <RippleAnimation /></button>
                 <p style={{ marginTop: 8, fontSize: 12, color: '#6b7280' }}>
-                  Continuing ripple <code>{(post.rippleId || post.id).slice(0, 6)}…</code> · Wave {nextGen}
+                  Continuing ripple <code>{(post.rippleId || post.id).slice(0, 6)}…</code> · Ripple {nextGen}
                 </p>
                 <button
                   type="button"
                   onClick={() => setShowComposer(false)}
-                  className="px-2 py-1"
-                  style={{ fontSize: 12, color: '#6b7280', textDecoration: 'underline', marginTop: 6 }}
-                >
-                  Cancel
-                </button>
+                >Close</button>
               </form>
             </div>
           )}
