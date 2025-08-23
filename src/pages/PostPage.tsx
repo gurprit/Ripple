@@ -34,7 +34,7 @@ export default function PostPage() {
 
       // 3️⃣ Send email with post link
       await emailjs.send(
-        'service_ypzr4dg',
+        'service_28zemt7',
         'template_567fc2a',
         {
           email: email,

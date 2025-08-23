@@ -200,7 +200,7 @@ export default function TimelinePage() {
       await Promise.all(
         recipients.map((to_email) =>
           emailjs.send(
-            'service_ypzr4dg',
+            'service_28zemt7',
             'template_567fc2a',
             {
               to_email,
