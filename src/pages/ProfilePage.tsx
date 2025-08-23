@@ -1,7 +1,7 @@
 import type { User } from 'firebase/auth';
 import { auth, db } from '../services/firebase';
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   collection,
   query,
@@ -35,6 +35,7 @@ interface Post {
 export default function ProfilePage() {
   const params = useParams<{ uid: string }>();
   const viewingUid = params.uid || null;
+  const navigate = useNavigate();
 
   const [self, setSelf] = useState<User | null>(null);
   const [profile, setProfile] = useState<PublicProfile | null>(null);
@@ -54,9 +55,7 @@ export default function ProfilePage() {
     (async () => {
       setLoading(true);
 
-      // Determine whose profile we’re showing
       const targetUid = viewingUid || self?.uid || null;
-
       if (!targetUid) {
         setProfile(null);
         setPosts([]);
@@ -65,8 +64,6 @@ export default function ProfilePage() {
         return;
       }
 
-      // If you have a `users` collection, fetch from there. Otherwise:
-      // Fallback profile data from their most recent post
       try {
         const latestQ = query(
           collection(db, 'posts'),
@@ -77,7 +74,6 @@ export default function ProfilePage() {
         const latestSnap = await getDocs(latestQ);
         const mostRecent = latestSnap.docs[0]?.data() as Partial<Post> | undefined;
 
-        // Count their posts
         const countQ = query(collection(db, 'posts'), where('uid', '==', targetUid));
         const countSnap = await getDocs(countQ);
 
@@ -89,7 +85,6 @@ export default function ProfilePage() {
           email: viewingUid ? undefined : self?.email ?? undefined,
         });
 
-        // Live list of their posts (newest first)
         const postsQ = query(
           collection(db, 'posts'),
           where('uid', '==', targetUid),
@@ -98,7 +93,6 @@ export default function ProfilePage() {
         unsubPosts = onSnapshot(postsQ, (snap) => {
           const rows = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as Post[];
           setPosts(rows);
-          // Keep rippleCount in sync too (optional)
           setRippleCount(snap.size);
           setLoading(false);
         });
@@ -131,9 +125,14 @@ export default function ProfilePage() {
 
   const isSelf = !viewingUid || viewingUid === self?.uid;
 
+  const handleSignOut = async () => {
+    await auth.signOut();
+    navigate('/login');
+  };
+
   return (
-    <div className="profile content">
-      <header>
+    <div className="profile content" style={{ maxWidth: 900, margin: '0 auto', padding: '16px' }}>
+      <header className="text-center" style={{ marginBottom: 16 }}>
         {profile.photoURL ? (
           <img
             src={profile.photoURL}
@@ -142,36 +141,54 @@ export default function ProfilePage() {
             style={{ display: 'inline-block' }}
           />
         ) : (
-          <div style={{ display: 'inline-block' }} />
+          <div className="w-24 h-24 rounded-full mb-4 bg-gray-300" style={{ display: 'inline-block' }} />
         )}
-        <h1>
+        <h1 className="text-2xl font-bold mb-1">
           {profile.displayName || 'Anonymous'}
         </h1>
         {isSelf && profile.email && (
-          <p>{profile.email}</p>
+          <p className="text-gray-600 mb-2">{profile.email}</p>
         )}
 
-        <div>
-          <div>
-            <p>{rippleCount}</p>
-            <p>Ripples</p>
+        <div className="flex items-center justify-center gap-6 mt-3">
+          <div className="text-center">
+            <p className="font-bold text-lg">{rippleCount}</p>
+            <p className="text-sm text-gray-500">Ripples</p>
+          </div>
+          <div className="text-center">
+            <p className="font-bold text-lg">0</p>
+            <p className="text-sm text-gray-500">Friends</p>
+          </div>
+          <div className="text-center">
+            <p className="font-bold text-lg">0</p>
+            <p className="text-sm text-gray-500">Likes</p>
           </div>
         </div>
+
+        {isSelf && (
+          <button
+            onClick={handleSignOut}
+            className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+          >
+            Sign out
+          </button>
+        )}
       </header>
 
       {/* Posts list */}
       <section>
+        <h2 className="text-xl font-semibold mb-3">Posts</h2>
+
         {posts.length === 0 ? (
-          <p>No posts yet.</p>
+          <p className="text-gray-500">No posts yet.</p>
         ) : (
           <div className="timeline">
             {posts.map((post) => (
               <article key={post.id} className="timeline__post">
-                {/* Same header layout as timeline, but name/avatar are redundant here */}
                 <div className="timeline__post__content">
                   {post.photoURL ? (
-                    <Link to={`/profile/${post.uid}`}>
-                      <img
+                   <Link to={`/profile/${post.uid}`}>
+                    <img
                       src={post.photoURL}
                       alt={post.displayName || 'User'}
                       className="w-8 h-8 rounded-full mr-2"

@@ -219,9 +219,9 @@ export default function RipplePage() {
         </form>
       </div>
       <h1 className="ripple-details-header">
-        Posts: <strong>{posts.length} </strong> 
-        People: <strong>{uniqueAuthors} </strong> 
-        Ripples: <strong>{maxDepth} </strong> 
+        Posts <strong>{posts.length} </strong> 
+        People <strong>{uniqueAuthors} </strong> 
+        Ripples <strong>{maxDepth} </strong> 
       </h1>
       {/* NEWEST → OLDEST (root ends up at the bottom) */}
       {posts.length === 0 ? (
@@ -234,15 +234,15 @@ export default function RipplePage() {
                 className={`timeline__post ${highlightId === p.id ? 'timeline__post--highlight' : ''}`}
                 key={p.id}
               >
-                <Link to={`/post/${p.id}`}className="timeline__post__text rainbow-text">
+                <div className="timeline__post__text rainbow-text">
                   <div className="timeline__post__content">
-                    {p.photoURL ? (<img src={p.photoURL} alt="" />) : (<div />)}
+                    {p.photoURL ? (<Link to={`/post/${p.id}`}><img src={p.photoURL} alt="" /></Link>) : (<div />)}
                     <span className="timeline__post__user">{p.displayName || 'Anonymous'}</span>
                   </div>
                   <div className="timeline__post__text ">
                     <SlabText text={p.text} paddingFactor={0.92} />
                   </div>
-                </Link>
+                </div>
               </div>
             ))}
 
