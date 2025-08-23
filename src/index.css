@@ -528,11 +528,11 @@ color: black;
   color: black;
   padding: 0px 10px;
   text-transform: uppercase;
-  font-family: "Abril Fatface";
   font-size: 16px;
   line-height: 14px;
   text-align: left;
   flex-basis: 30%;
+  font-weight: 900;
 }
 .ripple-button.large {
   font-size: 19px;
@@ -542,7 +542,7 @@ color: black;
 
 .ripple-button__composer {
   font-size: 22px;
-  width: 280px;
+  width: 235px;
   @media (max-width: 480px) {
     width: 100%;
   }

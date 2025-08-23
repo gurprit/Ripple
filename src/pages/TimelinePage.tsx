@@ -273,14 +273,16 @@ export default function TimelinePage() {
         {posts.map(post => (
           <div key={post.id} className="timeline__post">
             <div className="timeline__post__content">
-              {post.photoURL && (
-                <img
-                  src={post.photoURL}
-                  alt="User avatar"
-                  className="w-8 h-8 rounded-full mr-2"
-                />
-              )}
-              <span className="timeline__post__user">{post.displayName || 'Anonymous'}</span>
+            <Link to={`/profile/${post.uid}`}>
+                {post.photoURL && (
+                  <img
+                    src={post.photoURL}
+                    alt="User avatar"
+                    className="w-8 h-8 rounded-full mr-2"
+                  />
+                )}</Link>
+                <span className="timeline__post__user">{post.displayName || 'Anonymous'}</span>
+              
             </div>
 
             <Link to={`/post/${post.id}`} className="timeline__post__text rainbow-text">

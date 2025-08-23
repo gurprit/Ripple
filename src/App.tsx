@@ -1,5 +1,4 @@
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { useEffect, useRef, useState } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
 import PostPage from './pages/PostPage'; 
@@ -32,6 +31,9 @@ function App() {
             </RequireAuth>
           }
         />
+        
+        <Route path="/profile/:uid" element={<ProfilePage />} />
+
         <Route
           path="/post"
           element={
