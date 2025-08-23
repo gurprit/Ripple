@@ -233,7 +233,7 @@ export default function TimelinePage() {
         <form onSubmit={handlePostSubmit}>
           <textarea
             className="ripple-composer__textarea"
-            placeholder="Describe your good deed..."
+            placeholder="Create a ripple, describe your good deed..."
             rows={4}
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -252,7 +252,7 @@ export default function TimelinePage() {
             disabled={posting}
           >
             <RippleAnimation />
-            <span>{posting ? 'Posting...' : 'Post & Send'}</span>
+            <span>{posting ? 'Rippling...' : 'Create ripple'}</span>
           </button>
 
           {/* If composing as a child of an existing ripple, show a tiny hint */}

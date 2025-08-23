@@ -20,7 +20,8 @@ export default function LoginPage() {
     <div className="welcome">
         <div className="content">
             <h1 className="rainbow-text">RIPPLE</h1>
-            <p className="intro">Share a good deed and inspire your friends.</p>
+            <p className="intro">Share good deeds</p>
+            <p className="instructions">Tag friends, shared good deeds, grow the ripple</p>
             <button
                 onClick={handleGoogleLogin}
                 className="sign-in">

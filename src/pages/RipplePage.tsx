@@ -199,7 +199,7 @@ export default function RipplePage() {
         <form onSubmit={handleInlineSubmit}>
           <textarea
             className="ripple-composer__textarea"
-            placeholder="Describe your good deed..."
+            placeholder="Continue ripple, describe your good deed..."
             rows={4}
             value={composeText}
             onChange={(e) => setComposeText(e.target.value)}
@@ -214,7 +214,7 @@ export default function RipplePage() {
           />
           <button type="submit" className="ripple-button__composer ripple-button " disabled={posting}>
             <RippleAnimation />
-            <span>{posting ? 'Posting...' : 'Post & Send'}</span>
+            <span>{posting ? 'Rippling...' : 'Add to Ripple'}</span>
           </button>
         </form>
       </div>
