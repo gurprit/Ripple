@@ -170,11 +170,13 @@ export default function ProfilePage() {
                 {/* Same header layout as timeline, but name/avatar are redundant here */}
                 <div className="timeline__post__content">
                   {post.photoURL ? (
-                    <img
+                    <Link to={`/profile/${post.uid}`}>
+                      <img
                       src={post.photoURL}
                       alt={post.displayName || 'User'}
                       className="w-8 h-8 rounded-full mr-2"
                     />
+                    </Link>
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-gray-300 mr-2" />
                   )}

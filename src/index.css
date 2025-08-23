@@ -319,10 +319,11 @@ color: black;
   text-transform: capitalize;
   font-size: 15px;
   @media (max-width: 480px) {
-    position: absolute;
-    left: 50%;
-    transform: translate(-35%, 0%);
-    padding: 0px 10px 0px 10px;
+      position: absolute;
+      left: 50%;
+      transform: translate(-50%, 23px);
+      padding: 0px 10px 0px 10px;
+      margin: 0;
   }
 }
 

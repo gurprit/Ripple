@@ -225,7 +225,9 @@ export default function PostDetailPage() {
 
       <div className="timeline__post">
         <div className="timeline__post__content">
-          {post.photoURL && <img src={post.photoURL} alt="User avatar" className="w-8 h-8 rounded-full mr-2" />}
+          
+          {post.photoURL && <Link to={`/profile/${post.uid}`}><img src={post.photoURL} alt="User avatar" /></Link>}
+          
           <span className="timeline__post__user">{post.displayName || 'Anonymous'}</span>
         </div>
 
