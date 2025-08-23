@@ -346,17 +346,23 @@ color: black;
   float: left;
   width: 90px;
   height: 115px;
+    transform: translate(0px, -10px);
 }
 .timeline__post__like_count {
     position: absolute;
-    bottom: 13px;
-    right: 34px;
+    top: 17px;
+    right: 14px;
     color: black;
     background: white;
     border-radius: 100%;
     width: 20px;
     text-align: center;
     height: 20px;
+    @media (max-width: 480px) {
+      top: auto;
+      bottom: 13px;
+      right: 34px;
+  }
 }
 .timeline__post__like_button {
   position: relative;
