@@ -51,17 +51,20 @@ body {
 
 /* 🌈 Static rainbow background, fixed behind everything */
 body::before {
+  display: block;
+  content: '';
   position: fixed;
-    top: 0px;
-    left: 50%;
-    transform: translateX(-50%);
-    height: 100vh;
-    width: 100vh;
-    width: 5%;
-    transition: width 1s ease-out;
-    background: linear-gradient(red 0%, red 16.66%, orange 16.66%, orange 33.33%, yellow 33.33%, yellow 50%, green 50%, green 66.66%, blue 66.66%, blue 83.33%, violet 83.33%, violet 100%) no-repeat;
-    z-index: -1;
-    pointer-events: none;
+  top: 0px;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 100vh;
+  width: 100vh;
+  width: 100%;
+  transition: width 1s ease-out;
+  background: linear-gradient(red 0%, red 16.66%, orange 16.66%, orange 33.33%, yellow 33.33%, yellow 50%, green 50%, green 66.66%, blue 66.66%, blue 83.33%, violet 83.33%, violet 100%) no-repeat;
+  z-index: -1;
+  pointer-events: none;
+  filter: grayscale(1) contrast(0.5) brightness(.50);
 }
 
 h1 {
@@ -196,7 +199,8 @@ textarea.ripple-composer__textarea {
   border-radius: 10px;
   @media (max-width: 480px) {
     margin: 0px 0px 0px -15px;
-    font-size: 21px;
+    font-size: 20px;
+    padding: 5px 0px 15px 11px;
   }
 }
 
@@ -236,18 +240,7 @@ display: block;
 color: black;
 }
 
-.rainbow-bkgrd {
-  position: fixed;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 100%;
-  transition: width 1s ease-out;
-  background: linear-gradient(red 0%, red 16.66%, orange 16.66%, orange 33.33%, yellow 33.33%, yellow 50%, green 50%, green 66.66%, blue 66.66%, blue 83.33%, violet 83.33%, violet 100%) no-repeat;
-  z-index: -1;
-  pointer-events: none;
-  filter: grayscale(1) contrast(0.5) brightness(.50);
-}
+
 
 .timeline {
   width: 100%;
@@ -527,13 +520,12 @@ color: black;
   align-items: center;
   line-height: 13px;
   color: black;
-  flex-direction: row-reverse;
   padding: 0px 10px;
   text-transform: uppercase;
   font-family: "Abril Fatface";
   font-size: 16px;
   line-height: 14px;
-  text-align: right;
+  text-align: left;
   flex-basis: 30%;
 }
 .ripple-button.large {
@@ -552,7 +544,7 @@ color: black;
 
 .ripple-button__composer .ripple-animation {
   width: 100%;
-  flex-basis: 30%; 
+  flex-basis: 20%; 
 }
 
 .wave-ripple-animation {

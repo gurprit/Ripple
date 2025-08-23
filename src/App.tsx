@@ -9,36 +9,10 @@ import PostDetailPage from './pages/PostDetailPage';
 import RipplePage from './pages/RipplePage';
 
 
-
-function RainbowBackground() {
-  const [width, setWidth] = useState('0%');
-  const divRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setWidth('100%');
-    const frame = requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        setWidth('100%');
-      });
-    });
-    return () => cancelAnimationFrame(frame);
-  }, []);
-
-  return (
-    <div
-      ref={divRef}
-      className='rainbow-bkgrd'
-      style={{ width }}
-    />
-  );
-}
-
 function App() {
-  const location = useLocation();
 
   return (
     <>
-      <RainbowBackground key={location.pathname} />
 
       <Routes>
         <Route path="/login" element={<LoginPage />} />

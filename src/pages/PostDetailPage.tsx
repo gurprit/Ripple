@@ -280,8 +280,10 @@ export default function PostDetailPage() {
                   required
                 />
                 <button type="submit" className="ripple-button__composer ripple-button " disabled={posting}>
-                  <span>{posting ? 'Rippling...' : 'Add to Ripple'}</span>
-                <RippleAnimation /></button>
+                 <RippleAnimation />
+                 <span>{posting ? 'Rippling...' : 'Add to Ripple'}</span>
+                
+                </button>
                 <p style={{ marginTop: 8, fontSize: 12, color: '#6b7280' }}>
                   Continuing ripple <code>{(post.rippleId || post.id).slice(0, 6)}…</code> · Ripple {nextGen}
                 </p>
