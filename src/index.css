@@ -271,6 +271,10 @@ color: black;
   }
 }
 
+.timeline__post__content {
+  margin: 0 0 10px;
+}
+
 .timeline__post__content a {
   display: flex;
   width: 60px;

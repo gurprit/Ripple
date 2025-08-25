@@ -81,6 +81,7 @@ export default function RipplePage() {
           return {
             id: d.id,
             text: data.text || '',
+            uid: data.uid || '',
             displayName: data.displayName ?? null,
             photoURL: data.photoURL ?? null,
             timestamp: data.timestamp,
@@ -146,6 +147,7 @@ export default function RipplePage() {
         if (prev.some((p) => p.id === docRef.id)) return prev; // in case listener already added it
         const optimistic: Post = {
           id: docRef.id,
+          uid: user.uid,
           text: postText,
           displayName: user.displayName ?? null,
           photoURL: user.photoURL ?? null,
