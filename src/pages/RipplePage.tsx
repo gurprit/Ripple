@@ -20,6 +20,7 @@ import RippleAnimation from '../components/RippleAnimation';
 interface Post {
   id: string;
   text: string;
+  uid: string;
   displayName: string | null;
   photoURL: string | null;
   timestamp: any;
@@ -221,7 +222,7 @@ export default function RipplePage() {
       <h1 className="ripple-details-header">
         Posts <strong>{posts.length} </strong> 
         People <strong>{uniqueAuthors} </strong> 
-        Ripples <strong>{maxDepth} </strong> 
+        Waves <strong>{maxDepth} </strong> 
       </h1>
       {/* NEWEST → OLDEST (root ends up at the bottom) */}
       {posts.length === 0 ? (
@@ -236,12 +237,13 @@ export default function RipplePage() {
               >
                 <div className="timeline__post__text rainbow-text">
                   <div className="timeline__post__content">
-                    {p.photoURL ? (<Link to={`/post/${p.id}`}><img src={p.photoURL} alt="" /></Link>) : (<div />)}
+                    {p.photoURL ? (<Link to={`/profile/${p.uid}`}><img src={p.photoURL} alt="" /></Link>) : (<div />)}
                     <span className="timeline__post__user">{p.displayName || 'Anonymous'}</span>
                   </div>
-                  <div className="timeline__post__text ">
+
+                  <Link to={`/post/${p.id}`} className="timeline__post__text rainbow-text">
                     <SlabText text={p.text} paddingFactor={0.92} />
-                  </div>
+                  </Link>
                 </div>
               </div>
             ))}

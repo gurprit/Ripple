@@ -298,6 +298,26 @@ export default function TimelinePage() {
                 }
               </p>
             )}
+
+            {/* Ripple snippet */}
+            {(typeof post.generation === 'number' || post.rippleId) && (
+              <div className="ripple-button-container">
+                {post.rippleId && (
+                  <Link to={`/ripple/${post.rippleId}`} className="ripple-button">
+                    <RippleAnimation /> View ripple
+                  </Link>
+                )}
+              </div>
+            )}
+
+            <div className="timeline__post__like">
+              <HeartButton
+                liked={userLikes[post.id]}
+                onClick={() => toggleLike(post.id)}
+              />
+              <span className="timeline__post__like_count">{likes[post.id] || 0}</span>
+            </div>
+
             <div className="timeline__post__commentscontainewr">
               <div className="timeline__post__commentsform">
                 <input
@@ -330,31 +350,11 @@ export default function TimelinePage() {
                     ) : (
                       <div className="no-photo" />
                     )}
-                    <span className="timeline__post__comment_text">{comment.text}</span>
+                    <p className="timeline__post__comment_text">{comment.text}</p>
                   </div>
                 ))}
               </div>
             </div>
-
-            {/* Ripple snippet */}
-            {(typeof post.generation === 'number' || post.rippleId) && (
-              <div className="ripple-button-container">
-                {post.rippleId && (
-                  <Link to={`/ripple/${post.rippleId}`} className="ripple-button">
-                    <RippleAnimation /> View ripple
-                  </Link>
-                )}
-              </div>
-            )}
-
-            <div className="timeline__post__like">
-              <HeartButton
-                liked={userLikes[post.id]}
-                onClick={() => toggleLike(post.id)}
-              />
-              <span className="timeline__post__like_count">{likes[post.id] || 0}</span>
-            </div>
-
           </div>
         ))}
       </div>

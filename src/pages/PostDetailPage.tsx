@@ -338,7 +338,7 @@ export default function PostDetailPage() {
                 ) : (
                   <div className="w-6 h-6 bg-gray-300 rounded-full mr-2" />
                 )}
-                <div><p className="timeline__post__comment_text">{c.text}</p></div>
+                <p className="timeline__post__comment_text">{c.text}</p>
               </div>
             ))}
           </div>

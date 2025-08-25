@@ -339,12 +339,10 @@ color: black;
   font-size: 12px;
 }
 .timeline__post__commentscontainewr {
-  display: none;
-  float: right;
-  width: 45%;
+    clear: both;
   @media (max-width: 480px) {
     float: none;
-    width: 100%;
+    padding: 5px 0 0;
   }
 }
 .timeline__post__like {
@@ -400,12 +398,22 @@ color: black;
   font-family: "Fredoka", sans-serif;
   font-size: 24px;
   font-weight: 400;
+  text-align: left;
+  @media (max-width: 480px) {
+      margin: 20px 45px 0;
+  }
+}
+.timeline__post__comment_text {
+  padding: 0;
+  margin: 0;
 }
 
 .timeline__post__comment {
-  padding: 10px;
-  margin: 10px;
   color: white;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 .timeline__post__commentsform {
     margin: 20px;
@@ -417,7 +425,7 @@ color: black;
   }
 }
 .timeline__post__commentsform input {
-  width: 70%;
+  width: 215px;
   border: solid black 1px;
   padding: 10px 0px 0px 15px;
   margin: 0px 0px 0px -15px;
@@ -437,11 +445,11 @@ color: black;
 }
 
 .timeline__post__comment_profile {
-  width:30px;
-  overflow: hidden;
-  border-radius: 100%;
-  margin: 0 11px -10px 0px;
-
+  width: 40px;   /* fixed size */
+  height: 40px;  /* fixed size */
+  border-radius: 50%; /* circle avatar */
+  object-fit: cover; /* prevent stretching, crop instead */
+  flex-shrink: 0; /* don’t let the image shrink */
 }
 
 .profile header img {
