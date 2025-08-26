@@ -345,7 +345,7 @@ color: black;
 .timeline__post__commentscontainewr {
   clear: both;
   width: 100%;
-  transform: translate(0px, -20px);
+  transform: translate(-20px, -20px);
   @media (max-width: 480px) {
     float: none;
     padding: 5px 0 0;
@@ -357,9 +357,9 @@ color: black;
   float: left;
   width: 90px;
   height: 115px;
-  transform: translate(20px, 10px);
+  transform: translate(0px, 10px);
   @media (max-width: 480px) {
-    transform: translate(20px, -15px);
+    transform: translate(40px, -15px);
   }
 }
 .timeline__post__like_count {
@@ -417,6 +417,16 @@ color: black;
   }
 }
 
+@media (max-width: 480px) {
+  .timeline__post__combo_line_element.tl .timeline__post__like{
+    transform: translate(42px, -16px);
+  }
+  .timeline__post__commentscontainewr.tl {
+    transform: translate(0px, -16px);
+  }
+}
+
+
 .timeline__post__combo_line_element .timeline__post__commentscontainewr {
     transform: translate(0px, 34px);
     @media (max-width: 480px) {
@@ -424,6 +434,16 @@ color: black;
       transform: translate(0px, 0);
     }
 }
+@media (max-width: 480px) {
+  .timeline__post__combo_line_element .timeline__post__commentscontainewr .timeline__post__comments {
+    margin: 20px 0 0;
+  } 
+  .timeline__post__combo_line_element .timeline__post__like {
+    transform: translate(20px, -24px);
+  }
+}
+
+
 
 .timeline__post__combo_line_element .timeline__post__commentscontainewr .timeline__post__commentsform input {
   @media (max-width: 480px) {
@@ -438,8 +458,8 @@ color: black;
   text-align: left;
   transform: translate(25px, 0px);
   @media (max-width: 480px) {
-    margin: 20px auto 0;
-    width: 250px;
+    margin: 20px 45px 0;
+    width: auto;
     transform: translate(0, 0);
   }
 }
@@ -465,7 +485,7 @@ color: black;
   }
 }
 .timeline__post__commentsform input {
-  width: 210px;
+  width: 237px;
   border: solid black 1px;
   padding: 10px 0px 0px 15px;
   margin: 0px 0px 0px -15px;
@@ -476,6 +496,9 @@ color: black;
   border: 4px black solid;
   background: white;
   border-radius: 10px;
+  @media (max-width: 480px) {
+    width: 217px;
+  }
 }
 
 .postcomment-button {
@@ -573,7 +596,7 @@ color: black;
   float: left;
   margin: 21px 10px;
   @media (max-width: 480px) {
-    margin: 0px 10px 30px;
+    margin: 0px 10px 30px 25px;
   }
 }
 .ripple-button {

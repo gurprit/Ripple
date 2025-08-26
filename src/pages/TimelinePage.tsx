@@ -298,7 +298,7 @@ export default function TimelinePage() {
                 }
               </p>
             )}
-        <div className="timeline__post__combo_line_element">
+        <div className="timeline__post__combo_line_element tl">
             <div className="timeline__post__like">
               <HeartButton
                 liked={userLikes[post.id]}
@@ -320,7 +320,7 @@ export default function TimelinePage() {
 
 
           </div>
-            <div className="timeline__post__commentscontainewr">
+            <div className="timeline__post__commentscontainewr tl">
               <div className="timeline__post__commentsform">
                 <input
                   type="text"
