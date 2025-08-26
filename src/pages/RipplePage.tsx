@@ -30,6 +30,7 @@ interface Post {
   rippleId: string;
   parentPostId?: string | null;
   generation: number;
+  authorEmail?: string | null;
 }
 
 interface Comment {
@@ -89,7 +90,6 @@ export default function RipplePage() {
       where('rippleId', '==', rippleId),
       orderBy('timestamp', 'desc')
     );
-    // includeMetadataChanges → show pending writes instantly
     const unsub = onSnapshot(
       qy,
       { includeMetadataChanges: true },
@@ -106,10 +106,23 @@ export default function RipplePage() {
             rippleId: (data.rippleId as string) || rippleId,
             parentPostId: data.parentPostId ?? null,
             generation: typeof data.generation === 'number' ? data.generation : 0,
+            authorEmail: (data.authorEmail as string) ?? null,
           } as Post;
         });
+
         setPosts(rows);
         setLoading(false);
+
+        // 🔧 Tiny backfill: stamp authorEmail for *my* older posts missing it
+        const me = auth.currentUser;
+        if (me?.email) {
+          rows.forEach(p => {
+            if (p.uid === me.uid && !p.authorEmail) {
+              setDoc(doc(db, 'posts', p.id), { authorEmail: me.email }, { merge: true })
+                .catch(e => console.warn('authorEmail backfill failed for', p.id, e));
+            }
+          });
+        }
       }
     );
     return () => unsub();
@@ -149,7 +162,6 @@ export default function RipplePage() {
   }, [posts]);
 
   const newest = posts[0];
-
   const uniqueAuthors = new Set(posts.map((p) => p.displayName || p.id)).size;
 
   const toggleLike = async (postId: string) => {
@@ -202,11 +214,10 @@ export default function RipplePage() {
 
     setPosting(true);
     try {
-      // Continue from the newest post by default
       const parentPostId = newest?.id || null;
       const nextGen = (newest?.generation ?? -1) + 1;
 
-      // Create the doc
+      // Create the doc — include authorEmail on create
       const docRef = await addDoc(collection(db, 'posts'), {
         uid: user.uid,
         displayName: user.displayName,
@@ -218,26 +229,27 @@ export default function RipplePage() {
         rippleId,
         parentPostId,
         generation: Math.max(nextGen, 0),
+        authorEmail: user.email ?? null,
       });
 
-      // Optimistically prepend the new post so UI updates immediately
+      // Optimistically prepend the new post
       setPosts((prev) => {
-        if (prev.some((p) => p.id === docRef.id)) return prev; // in case listener already added it
+        if (prev.some((p) => p.id === docRef.id)) return prev;
         const optimistic: Post = {
           id: docRef.id,
           uid: user.uid,
           text: postText,
           displayName: user.displayName ?? null,
           photoURL: user.photoURL ?? null,
-          timestamp: { toMillis: () => Date.now() } as any, // client ts until server ts arrives
+          timestamp: { toMillis: () => Date.now() } as any,
           rippleId,
           parentPostId,
           generation: Math.max(nextGen, 0),
+          authorEmail: user.email ?? null,
         };
         return [optimistic, ...prev];
       });
 
-      // Highlight immediately
       setHighlightId(docRef.id);
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -245,7 +257,6 @@ export default function RipplePage() {
       await setDoc(doc(db, 'posts', docRef.id), { rippleId }, { merge: true });
 
       const postLink = `${window.location.origin}/post/${docRef.id}`;
-      // Fire off emails, but UI is already updated
       await Promise.all(
         recipients.map((to_email) =>
           emailjs.send(
@@ -257,7 +268,6 @@ export default function RipplePage() {
         )
       );
 
-      // Clear composer
       setComposeText('');
       setComposeEmail('');
     } catch (err: any) {
@@ -272,10 +282,9 @@ export default function RipplePage() {
 
   return (
     <div className="ripple-detail">
-    <Link to="/" className="back tl">
-      ← Back to timeline
-    </Link>
+      <Link to="/" className="back tl">← Back to timeline</Link>
       <WaveRipple />
+
       {/* Always-visible composer */}
       <div ref={composerRef} className="ripple-composer">
         <form onSubmit={handleInlineSubmit}>
@@ -306,12 +315,10 @@ export default function RipplePage() {
         People <strong>{uniqueAuthors} </strong>
       </h1>
 
-      {/* NEWEST → OLDEST (root ends up at the bottom) */}
       {posts.length === 0 ? (
         <p className="content">No posts in this ripple yet.</p>
       ) : (
-      <section className="timeline">
-
+        <section className="timeline">
           {posts.map((p) => (
             <div
               className={`timeline__post ${highlightId === p.id ? 'timeline__post--highlight' : ''}`}
@@ -334,8 +341,7 @@ export default function RipplePage() {
                 </Link>
               </div>
 
-
-            <div className="timeline__post__combo_line_element">
+              <div className="timeline__post__combo_line_element">
                 {/* Likes */}
                 <div className="timeline__post__like">
                   <HeartButton

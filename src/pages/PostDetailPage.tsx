@@ -38,6 +38,8 @@ interface Post {
 
   recipients?: string[];
   recipient?: string | null;
+
+  authorEmail?: string | null;
 }
 
 interface Comment {
@@ -85,7 +87,15 @@ export default function PostDetailPage() {
       const docRef = doc(db, 'posts', id);
       const snap = await getDoc(docRef);
       if (snap.exists()) {
-        setPost({ id: snap.id, ...snap.data() } as Post);
+        const data = { id: snap.id, ...snap.data() } as Post;
+        setPost(data);
+
+        // 🔧 Tiny backfill: if this is *my* post and missing authorEmail, patch it
+        const me = auth.currentUser;
+        if (me?.email && data.uid === me.uid && !data.authorEmail) {
+          setDoc(docRef, { authorEmail: me.email }, { merge: true })
+            .catch(e => console.warn('authorEmail backfill failed for', snap.id, e));
+        }
       }
       setLoading(false);
     })();
@@ -105,8 +115,8 @@ export default function PostDetailPage() {
   useEffect(() => {
     if (!id) return;
     const commentsRef = collection(db, 'posts', id, 'comments');
-    const q = query(commentsRef, orderBy('timestamp', 'asc'));
-    const unsub = onSnapshot(q, snap => {
+    const qy = query(commentsRef, orderBy('timestamp', 'asc'));
+    const unsub = onSnapshot(qy, snap => {
       setComments(snap.docs.map(d => ({ id: d.id, ...d.data() } as Comment)));
     });
     return () => unsub();
@@ -173,6 +183,9 @@ export default function PostDetailPage() {
         rippleId,
         parentPostId: post.id,
         generation: nextGen,
+
+        // ✅ ensure new child posts also carry authorEmail
+        authorEmail: user.email ?? null,
       });
 
       await setDoc(doc(db, 'posts', docRef.id), { rippleId }, { merge: true });
@@ -204,7 +217,6 @@ export default function PostDetailPage() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      // onAuthStateChanged will update UI; optionally open the composer right away:
       setShowComposer(true);
     } catch (e: any) {
       console.error('Google sign-in failed:', e?.message || e);
@@ -225,9 +237,7 @@ export default function PostDetailPage() {
 
       <div className="timeline__post">
         <div className="timeline__post__content">
-          
           {post.photoURL && <Link to={`/profile/${post.uid}`}><img src={post.photoURL} alt="User avatar" /></Link>}
-          
           <span className="timeline__post__user">{post.displayName || 'Anonymous'}</span>
         </div>
 
@@ -241,10 +251,8 @@ export default function PostDetailPage() {
           </p>
         )}
 
-
-        <div className='timeline__post__combo_line_element col-on-mobile'> 
+        <div className='timeline__post__combo_line_element col-on-mobile'>
           {!isAuthed ? (
-            // NOT LOGGED IN → show Login with Google
             <div
               onClick={loginWithGoogle}
               className="ripple-button large"
@@ -253,26 +261,16 @@ export default function PostDetailPage() {
               Login with Google
             </div>
           ) : !showComposer ? (
-            // LOGGED IN, composer hidden → show "Tag someone"
             <div
               onClick={() => setShowComposer(true)}
               className="ripple-button-container"
             >
               <div className="ripple-button">
-
-              <RippleAnimation />
-              Tag someone keep it going
+                <RippleAnimation />
+                Tag someone keep it going
               </div>
-
             </div>
-
-
-
-
-
-
           ) : (
-            // LOGGED IN, composer visible → show form
             <div className="ripple-composer">
               <form onSubmit={handleInlineSubmit}>
                 <textarea
@@ -291,30 +289,26 @@ export default function PostDetailPage() {
                   required
                 />
                 <button type="submit" className="ripple-button__composer ripple-button " disabled={posting}>
-                 <RippleAnimation />
-                 <span>{posting ? 'Rippling...' : 'Add to Ripple'}</span>
-                
+                  <RippleAnimation />
+                  <span>{posting ? 'Rippling...' : 'Add to Ripple'}</span>
                 </button>
                 <p style={{ marginTop: 8, fontSize: 12, color: '#6b7280' }}>
                   Continuing ripple <code>{(post.rippleId || post.id).slice(0, 6)}…</code> · Ripple {nextGen}
                 </p>
-                <button
-                  type="button"
-                  onClick={() => setShowComposer(false)}
-                >Close</button>
+                <button type="button" onClick={() => setShowComposer(false)}>Close</button>
               </form>
             </div>
           )}
 
-        {(typeof post.generation === 'number' || post.rippleId) && (
-          <div className="ripple-button-container">
-            {post.rippleId && (
-              <Link to={`/ripple/${post.rippleId}`} className="ripple-button">
-                <RippleAnimation /> View ripple
-              </Link>
-            )}
-          </div>
-        )}
+          {(typeof post.generation === 'number' || post.rippleId) && (
+            <div className="ripple-button-container">
+              {post.rippleId && (
+                <Link to={`/ripple/${post.rippleId}`} className="ripple-button">
+                  <RippleAnimation /> View ripple
+                </Link>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="timeline__post__combo_line_element">
@@ -354,6 +348,7 @@ export default function PostDetailPage() {
             </div>
           </div>
         </div>
+
       </div>
     </div>
   );

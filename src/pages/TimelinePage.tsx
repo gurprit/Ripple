@@ -33,9 +33,12 @@ interface Post {
   parentPostId?: string | null;
   generation?: number;
 
-  // NEW (for showing recipients reliably):
+  // Recipients
   recipients?: string[];
-  recipient?: string | null; // backward compatibility with older posts
+  recipient?: string | null;
+
+  // NEW for notifications
+  authorEmail?: string | null;
 }
 
 interface Comment {
@@ -68,18 +71,29 @@ export default function TimelinePage() {
   const nextGen = Number(params.get('gen') || '1');
 
   useEffect(() => {
-    const q = query(collection(db, 'posts'), orderBy('timestamp', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedPosts = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
+    const qy = query(collection(db, 'posts'), orderBy('timestamp', 'desc'));
+    const unsubscribe = onSnapshot(qy, (snapshot) => {
+      const rows = snapshot.docs.map(docSnap => ({
+        id: docSnap.id,
+        ...docSnap.data()
       })) as Post[];
 
-      setPosts(fetchedPosts);
+      setPosts(rows);
       setLoading(false);
 
+      // 🔧 Tiny backfill: stamp authorEmail for *my* older posts that are missing it
+      const me = auth.currentUser;
+      if (me?.email) {
+        rows.forEach(p => {
+          if (p.uid === me.uid && !p.authorEmail) {
+            setDoc(doc(db, 'posts', p.id), { authorEmail: me.email }, { merge: true })
+              .catch(e => console.warn('authorEmail backfill failed for', p.id, e));
+          }
+        });
+      }
+
       // subscribe to likes & comments for each post
-      fetchedPosts.forEach((post) => {
+      rows.forEach((post) => {
         const likesRef = collection(db, 'posts', post.id, 'likes');
         onSnapshot(likesRef, (likeSnapshot) => {
           setLikes((prev) => ({
@@ -88,7 +102,7 @@ export default function TimelinePage() {
           }));
           const uid = auth.currentUser?.uid;
           if (uid) {
-            const likedByUser = likeSnapshot.docs.some(doc => doc.id === uid);
+            const likedByUser = likeSnapshot.docs.some(d => d.id === uid);
             setUserLikes((prev) => ({
               ...prev,
               [post.id]: likedByUser,
@@ -99,9 +113,9 @@ export default function TimelinePage() {
         const commentsRef = collection(db, 'posts', post.id, 'comments');
         const commentsQuery = query(commentsRef, orderBy('timestamp', 'asc'));
         onSnapshot(commentsQuery, (commentSnapshot) => {
-          const fetchedComments = commentSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
+          const fetchedComments = commentSnapshot.docs.map(d => ({
+            id: d.id,
+            ...d.data()
           })) as Comment[];
           setComments((prev) => ({
             ...prev,
@@ -117,22 +131,16 @@ export default function TimelinePage() {
   const toggleLike = async (postId: string) => {
     const uid = auth.currentUser?.uid;
     if (!uid) return;
-
     const likeRef = doc(db, 'posts', postId, 'likes', uid);
     const likeDoc = await getDoc(likeRef);
-
-    if (likeDoc.exists()) {
-      await deleteDoc(likeRef);
-    } else {
-      await setDoc(likeRef, { likedAt: Date.now() });
-    }
+    if (likeDoc.exists()) await deleteDoc(likeRef);
+    else await setDoc(likeRef, { likedAt: Date.now() });
   };
 
   const handleCommentSubmit = async (postId: string) => {
     const uid = auth.currentUser?.uid;
     const user = auth.currentUser;
     const commentText = newComment[postId]?.trim();
-
     if (!uid || !commentText) return;
 
     const commentsRef = collection(db, 'posts', postId, 'comments');
@@ -141,7 +149,7 @@ export default function TimelinePage() {
       displayName: user?.displayName || 'Anonymous',
       photoURL: user?.photoURL || null,
       text: commentText,
-      timestamp: Date.now(),
+      timestamp: serverTimestamp(),
     });
 
     setNewComment((prev) => ({ ...prev, [postId]: '' }));
@@ -159,7 +167,7 @@ export default function TimelinePage() {
 
     // normalize & validate recipients
     const recipients = rawEmail
-      .split(/[,\s;]+/)        // split by commas, spaces, semicolons, newlines
+      .split(/[,\s;]+/)
       .map(e => e.trim())
       .filter(Boolean);
 
@@ -182,9 +190,12 @@ export default function TimelinePage() {
         recipients,
         recipient: recipients[0] ?? null,
 
-        rippleId: fromRippleId || 'pending',            // if root: set after create
+        rippleId: fromRippleId || 'pending',
         parentPostId: fromRippleId ? parent : null,
         generation: fromRippleId ? nextGen : 0,
+
+        // ✅ ensure new posts always carry the author email for notifications
+        authorEmail: user.email ?? null,
       };
 
       const docRef = await addDoc(collection(db, 'posts'), basePost);
@@ -196,7 +207,7 @@ export default function TimelinePage() {
 
       const postLink = `${window.location.origin}/post/${docRef.id}`;
 
-      // 3) Send one email per recipient
+      // 3) Send one email per recipient (existing "you got tagged" template)
       await Promise.all(
         recipients.map((to_email) =>
           emailjs.send(
@@ -216,8 +227,6 @@ export default function TimelinePage() {
 
       setText('');
       setEmail('');
-      // (Optional) clear the ripple params from the URL here by pushing to '/'.
-
     } catch (err: any) {
       console.error('Error posting ripple or sending email:', err?.text || err);
       alert(`Couldn’t send email: ${err?.text || 'Unknown error'}`);
@@ -228,7 +237,6 @@ export default function TimelinePage() {
 
   return (
     <div className="timeline">
-
       <div className="ripple-composer">
         <form onSubmit={handlePostSubmit}>
           <textarea
@@ -255,7 +263,6 @@ export default function TimelinePage() {
             <span>{posting ? 'Rippling...' : 'Create ripple'}</span>
           </button>
 
-          {/* If composing as a child of an existing ripple, show a tiny hint */}
           {fromRippleId && (
             <p style={{ marginTop: 8, fontSize: 12, color: '#6b7280' }}>
               Continuing ripple <code>{fromRippleId.slice(0, 6)}…</code> · Wave {nextGen}
@@ -263,7 +270,6 @@ export default function TimelinePage() {
           )}
         </form>
         <WaveRipple />
-        
       </div>
 
       {loading && <p className="loading">Loading ripples...</p>}
@@ -273,16 +279,16 @@ export default function TimelinePage() {
         {posts.map(post => (
           <div key={post.id} className="timeline__post">
             <div className="timeline__post__content">
-            <Link to={`/profile/${post.uid}`}>
+              <Link to={`/profile/${post.uid}`}>
                 {post.photoURL && (
                   <img
                     src={post.photoURL}
                     alt="User avatar"
                     className="w-8 h-8 rounded-full mr-2"
                   />
-                )}</Link>
-                <span className="timeline__post__user">{post.displayName || 'Anonymous'}</span>
-              
+                )}
+              </Link>
+              <span className="timeline__post__user">{post.displayName || 'Anonymous'}</span>
             </div>
 
             <Link to={`/post/${post.id}`} className="timeline__post__text rainbow-text">
@@ -291,35 +297,30 @@ export default function TimelinePage() {
 
             {(post.recipients?.length || post.recipient) && (
               <p className="timeline__post_sent-to">
-                @{
-                  post.recipients?.length
-                    ? post.recipients.join(', @')
-                    : post.recipient
-                }
+                @{post.recipients?.length ? post.recipients.join(', @') : post.recipient}
               </p>
             )}
-        <div className="timeline__post__combo_line_element tl">
-            <div className="timeline__post__like">
-              <HeartButton
-                liked={userLikes[post.id]}
-                onClick={() => toggleLike(post.id)}
-              />
-              <span className="timeline__post__like_count">{likes[post.id] || 0}</span>
+
+            <div className="timeline__post__combo_line_element tl">
+              <div className="timeline__post__like">
+                <HeartButton
+                  liked={userLikes[post.id]}
+                  onClick={() => toggleLike(post.id)}
+                />
+                <span className="timeline__post__like_count">{likes[post.id] || 0}</span>
+              </div>
+
+              {(typeof post.generation === 'number' || post.rippleId) && (
+                <div className="ripple-button-container">
+                  {post.rippleId && (
+                    <Link to={`/ripple/${post.rippleId}`} className="ripple-button">
+                      <RippleAnimation /> View ripple
+                    </Link>
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* Ripple snippet */}
-            {(typeof post.generation === 'number' || post.rippleId) && (
-              <div className="ripple-button-container">
-                {post.rippleId && (
-                  <Link to={`/ripple/${post.rippleId}`} className="ripple-button">
-                    <RippleAnimation /> View ripple
-                  </Link>
-                )}
-              </div>
-            )}
-
-
-          </div>
             <div className="timeline__post__commentscontainewr tl">
               <div className="timeline__post__commentsform">
                 <input
@@ -357,7 +358,6 @@ export default function TimelinePage() {
                 ))}
               </div>
             </div>
-
 
           </div>
         ))}
