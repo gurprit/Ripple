@@ -151,7 +151,6 @@ export default function RipplePage() {
   const newest = posts[0];
 
   const uniqueAuthors = new Set(posts.map((p) => p.displayName || p.id)).size;
-  const maxDepth = posts.length ? Math.max(...posts.map((p) => p.generation)) : 0;
 
   const toggleLike = async (postId: string) => {
     const uid = auth.currentUser?.uid;
