@@ -149,7 +149,6 @@ button:focus-visible {
 .ripple-composer {
   padding: 10px;
   width: 65%;
-  padding: 8vh 40px 0;
   @media (max-width: 480px) {
     padding: 20px 10px;
     margin: auto;
@@ -298,6 +297,7 @@ color: black;
 }
 
 .timeline__post__text {
+  margin: 0 0 10px 0;
   font-family: 'Abril Fatface';
   font-size: 27px;
   line-height: 28px;
@@ -344,6 +344,7 @@ color: black;
 }
 .timeline__post__commentscontainewr {
     clear: both;
+    width: 100%;
   @media (max-width: 480px) {
     float: none;
     padding: 5px 0 0;
@@ -355,7 +356,7 @@ color: black;
   float: left;
   width: 90px;
   height: 115px;
-    transform: translate(0px, -10px);
+    transform: translate(20px, -10px);
 }
 .timeline__post__like_count {
     position: absolute;
@@ -398,13 +399,21 @@ color: black;
 
 }
 
+.timeline__post__combo_line_element {
+  display: inline-flex;
+  gap: 24px;
+  align-items: start;
+  width: 100%
+}
+
 .timeline__post__comments {
   font-family: "Fredoka", sans-serif;
   font-size: 24px;
   font-weight: 400;
   text-align: left;
   @media (max-width: 480px) {
-      margin: 20px 45px 0;
+    margin: 10px 0 0 10px;
+        width: 280px;
   }
 }
 .timeline__post__comment_text {
@@ -417,7 +426,10 @@ color: black;
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  margin-bottom: 10px;
+  @media (max-width: 480px) {
+    gap: 0;
+  }
+  
 }
 .timeline__post__commentsform {
     margin: 20px;
@@ -429,7 +441,7 @@ color: black;
   }
 }
 .timeline__post__commentsform input {
-  width: 215px;
+  width: 170px;
   border: solid black 1px;
   padding: 10px 0px 0px 15px;
   margin: 0px 0px 0px -15px;
@@ -536,10 +548,14 @@ color: black;
 .ripple-button-container {
   float: left;
   margin: 21px 10px;
+  @media (max-width: 480px) {
+    margin: 0px 10px 30px;
+  }
 }
 .ripple-button {
   background: white;
-  width: 110px;
+  width: 200px;
+  height: 100px;
   display: flex;
   border-radius: 10px;
   align-items: center;
@@ -550,18 +566,30 @@ color: black;
   font-size: 16px;
   line-height: 14px;
   text-align: left;
-  flex-basis: 30%;
   font-weight: 900;
+  @media (max-width: 480px) {
+    width: auto;
+  }
 }
 .ripple-button.large {
   font-size: 19px;
   line-height: 16px;
   width: 230px;
 }
+.ripple-button.large.keepitgoing {
+  margin: 0 0 20px;
+  @media (max-width: 480px) {
+    margin: 0 0 50px;
+  }
+}
+
+.ripple-button .ripple-animation svg {
+  width: 80px !important;
+}
 
 .ripple-button__composer {
   font-size: 22px;
-  width: 235px;
+  width: 265px;
   @media (max-width: 480px) {
     width: 100%;
   }

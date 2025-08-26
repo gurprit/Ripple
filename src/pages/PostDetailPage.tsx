@@ -241,27 +241,36 @@ export default function PostDetailPage() {
           </p>
         )}
 
-        <div>
+
+        <div className='timeline__post__combo_line_element'> 
           {!isAuthed ? (
             // NOT LOGGED IN → show Login with Google
-            <button
+            <div
               onClick={loginWithGoogle}
               className="ripple-button large"
-              type="button"
               aria-label="Login with Google to keep the ripple going"
             >
               Login with Google
-            </button>
+            </div>
           ) : !showComposer ? (
             // LOGGED IN, composer hidden → show "Tag someone"
-            <button
+            <div
               onClick={() => setShowComposer(true)}
-              className="ripple-button large"
-              type="button"
+              className="ripple-button-container"
             >
+              <div className="ripple-button">
+
               <RippleAnimation />
               Tag someone keep it going
-            </button>
+              </div>
+
+            </div>
+
+
+
+
+
+
           ) : (
             // LOGGED IN, composer visible → show form
             <div className="ripple-composer">
@@ -296,7 +305,6 @@ export default function PostDetailPage() {
               </form>
             </div>
           )}
-        </div>
 
         {(typeof post.generation === 'number' || post.rippleId) && (
           <div className="ripple-button-container">
@@ -307,43 +315,45 @@ export default function PostDetailPage() {
             )}
           </div>
         )}
-
-        {/* Likes */}
-        <div className="timeline__post__like">
-          <HeartButton liked={userLiked} onClick={toggleLike} />
-          <span className="timeline__post__like_count">{likeCount}</span>
         </div>
 
-        {/* Comments */}
-        <div className="timeline__post__commentscontainewr">
-          <div className="timeline__post__commentsform">
-            <input
-              type="text"
-              placeholder="Add comment..."
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              className="flex-1 border rounded p-1 text-sm mr-2"
-              disabled={!isAuthed}
-            />
-            <button onClick={submitComment} className="postcomment-button" type="button" disabled={!isAuthed}>
-              Post
-            </button>
+        <div className="timeline__post__combo_line_element">
+          {/* Likes */}
+          <div className="timeline__post__like">
+            <HeartButton liked={userLiked} onClick={toggleLike} />
+            <span className="timeline__post__like_count">{likeCount}</span>
           </div>
 
-          <div className="timeline__post__comments">
-            {comments.map((c) => (
-              <div key={c.id} className="timeline__post__comment">
-                {c.photoURL ? (
-                  <img src={c.photoURL} alt={c.displayName || 'Anon'} className="timeline__post__comment_profile" />
-                ) : (
-                  <div className="w-6 h-6 bg-gray-300 rounded-full mr-2" />
-                )}
-                <p className="timeline__post__comment_text">{c.text}</p>
-              </div>
-            ))}
+          {/* Comments */}
+          <div className="timeline__post__commentscontainewr">
+            <div className="timeline__post__commentsform">
+              <input
+                type="text"
+                placeholder="Add comment..."
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                className="flex-1 border rounded p-1 text-sm mr-2"
+                disabled={!isAuthed}
+              />
+              <button onClick={submitComment} className="postcomment-button" type="button" disabled={!isAuthed}>
+                Post
+              </button>
+            </div>
+
+            <div className="timeline__post__comments">
+              {comments.map((c) => (
+                <div key={c.id} className="timeline__post__comment">
+                  {c.photoURL ? (
+                    <img src={c.photoURL} alt={c.displayName || 'Anon'} className="timeline__post__comment_profile" />
+                  ) : (
+                    <div className="w-6 h-6 bg-gray-300 rounded-full mr-2" />
+                  )}
+                  <p className="timeline__post__comment_text">{c.text}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-
       </div>
     </div>
   );

@@ -10,12 +10,15 @@ import {
   serverTimestamp,
   doc,
   setDoc,
+  getDoc,
+  deleteDoc,
 } from 'firebase/firestore';
 import { db, auth } from '../services/firebase';
 import emailjs from '@emailjs/browser';
 import WaveRipple from '../components/WaveRippleAnimation';
 import SlabText from '../components/SlabText';
 import RippleAnimation from '../components/RippleAnimation';
+import HeartButton from '../components/HeartButton';
 
 interface Post {
   id: string;
@@ -29,6 +32,15 @@ interface Post {
   generation: number;
 }
 
+interface Comment {
+  id: string;
+  uid: string;
+  displayName: string | null;
+  photoURL: string | null;
+  text: string;
+  timestamp: any;
+}
+
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function RipplePage() {
@@ -38,6 +50,12 @@ export default function RipplePage() {
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Likes & comments state (per post)
+  const [likes, setLikes] = useState<Record<string, number>>({});
+  const [userLikes, setUserLikes] = useState<Record<string, boolean>>({});
+  const [comments, setComments] = useState<Record<string, Comment[]>>({});
+  const [newComment, setNewComment] = useState<Record<string, string>>({});
 
   // Always-visible composer
   const [composeText, setComposeText] = useState('');
@@ -81,7 +99,7 @@ export default function RipplePage() {
           return {
             id: d.id,
             text: data.text || '',
-            uid: data.uid || '',
+            uid: (data.uid as string) || '',
             displayName: data.displayName ?? null,
             photoURL: data.photoURL ?? null,
             timestamp: data.timestamp,
@@ -97,10 +115,71 @@ export default function RipplePage() {
     return () => unsub();
   }, [rippleId]);
 
+  // Subscribe to likes & comments per post
+  useEffect(() => {
+    if (!posts.length) return;
+    const unsubs: Array<() => void> = [];
+
+    posts.forEach((p) => {
+      // Likes
+      const likesRef = collection(db, 'posts', p.id, 'likes');
+      const unsubLikes = onSnapshot(likesRef, (likeSnap) => {
+        setLikes((prev) => ({ ...prev, [p.id]: likeSnap.size }));
+        const uid = auth.currentUser?.uid;
+        if (uid) {
+          const likedByUser = likeSnap.docs.some((d) => d.id === uid);
+          setUserLikes((prev) => ({ ...prev, [p.id]: likedByUser }));
+        }
+      });
+      unsubs.push(unsubLikes);
+
+      // Comments
+      const commentsRef = collection(db, 'posts', p.id, 'comments');
+      const commentsQ = query(commentsRef, orderBy('timestamp', 'asc'));
+      const unsubComments = onSnapshot(commentsQ, (cSnap) => {
+        const list = cSnap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as Comment[];
+        setComments((prev) => ({ ...prev, [p.id]: list }));
+      });
+      unsubs.push(unsubComments);
+    });
+
+    return () => {
+      unsubs.forEach((fn) => fn());
+    };
+  }, [posts]);
+
   const newest = posts[0];
 
   const uniqueAuthors = new Set(posts.map((p) => p.displayName || p.id)).size;
   const maxDepth = posts.length ? Math.max(...posts.map((p) => p.generation)) : 0;
+
+  const toggleLike = async (postId: string) => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+    const likeRef = doc(db, 'posts', postId, 'likes', uid);
+    const snap = await getDoc(likeRef);
+    if (snap.exists()) {
+      await deleteDoc(likeRef);
+    } else {
+      await setDoc(likeRef, { likedAt: Date.now() });
+    }
+  };
+
+  const handleCommentSubmit = async (postId: string) => {
+    const uid = auth.currentUser?.uid;
+    const user = auth.currentUser;
+    const text = (newComment[postId] || '').trim();
+    if (!uid || !text) return;
+    const commentsRef = collection(db, 'posts', postId, 'comments');
+    await addDoc(commentsRef, {
+      uid,
+      displayName: user?.displayName || 'Anonymous',
+      photoURL: user?.photoURL || null,
+      text,
+      timestamp: serverTimestamp(),
+    });
+    setNewComment((prev) => ({ ...prev, [postId]: '' }));
+  };
 
   const handleInlineSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,8 +230,7 @@ export default function RipplePage() {
           text: postText,
           displayName: user.displayName ?? null,
           photoURL: user.photoURL ?? null,
-          // simple client timestamp for ordering until server one arrives
-          timestamp: { toMillis: () => Date.now() } as any,
+          timestamp: { toMillis: () => Date.now() } as any, // client ts until server ts arrives
           rippleId,
           parentPostId,
           generation: Math.max(nextGen, 0),
@@ -183,7 +261,6 @@ export default function RipplePage() {
       // Clear composer
       setComposeText('');
       setComposeEmail('');
-
     } catch (err: any) {
       console.error('Error posting ripple or sending email:', err?.text || err);
       alert(`Couldn’t send email: ${err?.text || 'Unknown error'}`);
@@ -221,35 +298,92 @@ export default function RipplePage() {
           </button>
         </form>
       </div>
+
       <h1 className="ripple-details-header">
-        Posts <strong>{posts.length} </strong> 
-        People <strong>{uniqueAuthors} </strong> 
-        Waves <strong>{maxDepth} </strong> 
+        Posts <strong>{posts.length} </strong>
+        People <strong>{uniqueAuthors} </strong>
+        Waves <strong>{maxDepth} </strong>
       </h1>
+
       {/* NEWEST → OLDEST (root ends up at the bottom) */}
       {posts.length === 0 ? (
         <p className="content">No posts in this ripple yet.</p>
       ) : (
         <section className="timeline">
+          {posts.map((p) => (
+            <div
+              className={`timeline__post ${highlightId === p.id ? 'timeline__post--highlight' : ''}`}
+              key={p.id}
+            >
+              <div className="timeline__post__text rainbow-text">
+                <div className="timeline__post__content">
+                  {p.photoURL ? (
+                    <Link to={`/profile/${p.uid}`}>
+                      <img src={p.photoURL} alt="" />
+                    </Link>
+                  ) : (
+                    <div />
+                  )}
+                  <span className="timeline__post__user">{p.displayName || 'Anonymous'}</span>
+                </div>
 
-            {posts.map((p) => (
-              <div
-                className={`timeline__post ${highlightId === p.id ? 'timeline__post--highlight' : ''}`}
-                key={p.id}
-              >
-                <div className="timeline__post__text rainbow-text">
-                  <div className="timeline__post__content">
-                    {p.photoURL ? (<Link to={`/profile/${p.uid}`}><img src={p.photoURL} alt="" /></Link>) : (<div />)}
-                    <span className="timeline__post__user">{p.displayName || 'Anonymous'}</span>
+                <Link to={`/post/${p.id}`} className="timeline__post__text rainbow-text">
+                  <SlabText text={p.text} paddingFactor={0.92} />
+                </Link>
+              </div>
+
+
+            <div className="timeline__post__combo_line_element">
+                {/* Likes */}
+                <div className="timeline__post__like">
+                  <HeartButton
+                    liked={!!userLikes[p.id]}
+                    onClick={() => toggleLike(p.id)}
+                  />
+                  <span className="timeline__post__like_count">{likes[p.id] || 0}</span>
+                </div>
+
+                {/* Comments */}
+                <div className="timeline__post__commentscontainewr">
+                  <div className="timeline__post__commentsform">
+                    <input
+                      type="text"
+                      placeholder="Add comment..."
+                      value={newComment[p.id] || ''}
+                      onChange={(e) =>
+                        setNewComment((prev) => ({ ...prev, [p.id]: e.target.value }))
+                      }
+                      className="flex-1 border rounded p-1 text-sm mr-2"
+                    />
+                    <button
+                      onClick={() => handleCommentSubmit(p.id)}
+                      className="postcomment-button"
+                      type="button"
+                    >
+                      Post
+                    </button>
                   </div>
 
-                  <Link to={`/post/${p.id}`} className="timeline__post__text rainbow-text">
-                    <SlabText text={p.text} paddingFactor={0.92} />
-                  </Link>
+                  <div className="timeline__post__comments">
+                    {comments[p.id]?.map((c) => (
+                      <div key={c.id} className="timeline__post__comment">
+                        {c.photoURL ? (
+                          <img
+                            src={c.photoURL}
+                            alt={c.displayName || 'Anon'}
+                            className="timeline__post__comment_profile"
+                          />
+                        ) : (
+                          <div className="no-photo" />
+                        )}
+                        <span className="timeline__post__comment_text">{c.text}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            ))}
-
+            </div>
+          ))}
         </section>
       )}
     </div>
