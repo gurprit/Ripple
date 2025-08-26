@@ -242,7 +242,7 @@ export default function PostDetailPage() {
         )}
 
 
-        <div className='timeline__post__combo_line_element'> 
+        <div className='timeline__post__combo_line_element col-on-mobile'> 
           {!isAuthed ? (
             // NOT LOGGED IN → show Login with Google
             <div

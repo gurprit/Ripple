@@ -343,8 +343,9 @@ color: black;
   font-size: 12px;
 }
 .timeline__post__commentscontainewr {
-    clear: both;
-    width: 100%;
+  clear: both;
+  width: 100%;
+  transform: translate(0px, -20px);
   @media (max-width: 480px) {
     float: none;
     padding: 5px 0 0;
@@ -408,15 +409,38 @@ color: black;
   align-items: start;
   width: 100%
 }
+@media (max-width: 480px) {
+  .timeline__post__combo_line_element.col-on-mobile {
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+}
+
+.timeline__post__combo_line_element .timeline__post__commentscontainewr {
+    transform: translate(0px, 34px);
+    @media (max-width: 480px) {
+      width: 273px;
+      transform: translate(0px, 0);
+    }
+}
+
+.timeline__post__combo_line_element .timeline__post__commentscontainewr .timeline__post__commentsform input {
+  @media (max-width: 480px) {
+    width: 170px;
+  }
+}
 
 .timeline__post__comments {
   font-family: "Fredoka", sans-serif;
   font-size: 24px;
   font-weight: 400;
   text-align: left;
+  transform: translate(25px, 0px);
   @media (max-width: 480px) {
-    margin: 10px auto 0;
-    width: 280px;
+    margin: 20px auto 0;
+    width: 250px;
+    transform: translate(0, 0);
   }
 }
 .timeline__post__comment_text {
@@ -429,22 +453,19 @@ color: black;
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  @media (max-width: 480px) {
-    gap: 0;
-  }
   
 }
 .timeline__post__commentsform {
-    margin: 0 20px 20px;
+    margin: 0 40px 20px;
     display: block;
-    width: 78%;
+    width: 100%;
     @media (max-width: 480px) {
       margin: 0;
       width: 100%;
   }
 }
 .timeline__post__commentsform input {
-  width: 170px;
+  width: 210px;
   border: solid black 1px;
   padding: 10px 0px 0px 15px;
   margin: 0px 0px 0px -15px;
