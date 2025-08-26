@@ -273,6 +273,9 @@ export default function RipplePage() {
 
   return (
     <div className="ripple-detail">
+    <Link to="/" className="back tl">
+      ← Back to timeline
+    </Link>
       <WaveRipple />
       {/* Always-visible composer */}
       <div ref={composerRef} className="ripple-composer">
@@ -302,14 +305,14 @@ export default function RipplePage() {
       <h1 className="ripple-details-header">
         Posts <strong>{posts.length} </strong>
         People <strong>{uniqueAuthors} </strong>
-        Waves <strong>{maxDepth} </strong>
       </h1>
 
       {/* NEWEST → OLDEST (root ends up at the bottom) */}
       {posts.length === 0 ? (
         <p className="content">No posts in this ripple yet.</p>
       ) : (
-        <section className="timeline">
+      <section className="timeline">
+
           {posts.map((p) => (
             <div
               className={`timeline__post ${highlightId === p.id ? 'timeline__post--highlight' : ''}`}

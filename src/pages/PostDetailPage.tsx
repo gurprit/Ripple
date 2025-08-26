@@ -219,7 +219,7 @@ export default function PostDetailPage() {
 
   return (
     <div className="timeline">
-      <Link to="/" className="">
+      <Link to="/" className="back tl">
         ← Back to timeline
       </Link>
 

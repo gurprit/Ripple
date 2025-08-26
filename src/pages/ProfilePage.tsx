@@ -12,6 +12,7 @@ import {
   limit
 } from 'firebase/firestore';
 import SlabText from '../components/SlabText';
+import RippleAnimation from '../components/RippleAnimation';
 
 interface PublicProfile {
   uid: string;
@@ -131,7 +132,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="profile content" style={{ maxWidth: 900, margin: '0 auto', padding: '16px' }}>
+    <div className="profile content" >
       <header className="text-center" style={{ marginBottom: 16 }}>
         {profile.photoURL ? (
           <img
@@ -155,14 +156,6 @@ export default function ProfilePage() {
             <p className="font-bold text-lg">{rippleCount}</p>
             <p className="text-sm text-gray-500">Ripples</p>
           </div>
-          <div className="text-center">
-            <p className="font-bold text-lg">0</p>
-            <p className="text-sm text-gray-500">Friends</p>
-          </div>
-          <div className="text-center">
-            <p className="font-bold text-lg">0</p>
-            <p className="text-sm text-gray-500">Likes</p>
-          </div>
         </div>
 
         {isSelf && (
@@ -177,14 +170,13 @@ export default function ProfilePage() {
 
       {/* Posts list */}
       <section>
-        <h2 className="text-xl font-semibold mb-3">Posts</h2>
-
         {posts.length === 0 ? (
           <p className="text-gray-500">No posts yet.</p>
         ) : (
           <div className="timeline">
             {posts.map((post) => (
               <article key={post.id} className="timeline__post">
+
                 <div className="timeline__post__content">
                   {post.photoURL ? (
                    <Link to={`/profile/${post.uid}`}>
@@ -205,14 +197,15 @@ export default function ProfilePage() {
                 </Link>
 
                 {(post.rippleId || typeof post.generation === 'number') && (
-                  <div className="ripple-button-container" style={{ marginTop: 8 }}>
+                  <div className="ripple-button-container">
                     {post.rippleId && (
                       <Link to={`/ripple/${post.rippleId}`} className="ripple-button">
-                        View ripple
+                         <RippleAnimation /> View ripple
                       </Link>
                     )}
                   </div>
                 )}
+
               </article>
             ))}
           </div>
