@@ -10,7 +10,9 @@ import {
   addDoc,
   serverTimestamp,
   deleteDoc,
-  setDoc
+  setDoc,
+  where,
+  getDocs,
 } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
 import {
@@ -66,13 +68,11 @@ export default function PostDetailPage() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
 
-  // Inline composer for ripple continuation
   const [showComposer, setShowComposer] = useState(false);
   const [composeText, setComposeText] = useState('');
   const [composeEmail, setComposeEmail] = useState('');
   const [posting, setPosting] = useState(false);
 
-  // Track auth state so UI updates if user logs in/out
   const [currentUser, setCurrentUser] = useState<User | null | undefined>(undefined);
   const isAuthed = !!currentUser;
 
@@ -87,15 +87,7 @@ export default function PostDetailPage() {
       const docRef = doc(db, 'posts', id);
       const snap = await getDoc(docRef);
       if (snap.exists()) {
-        const data = { id: snap.id, ...snap.data() } as Post;
-        setPost(data);
-
-        // 🔧 Tiny backfill: if this is *my* post and missing authorEmail, patch it
-        const me = auth.currentUser;
-        if (me?.email && data.uid === me.uid && !data.authorEmail) {
-          setDoc(docRef, { authorEmail: me.email }, { merge: true })
-            .catch(e => console.warn('authorEmail backfill failed for', snap.id, e));
-        }
+        setPost({ id: snap.id, ...snap.data() } as Post);
       }
       setLoading(false);
     })();
@@ -115,8 +107,8 @@ export default function PostDetailPage() {
   useEffect(() => {
     if (!id) return;
     const commentsRef = collection(db, 'posts', id, 'comments');
-    const qy = query(commentsRef, orderBy('timestamp', 'asc'));
-    const unsub = onSnapshot(qy, snap => {
+    const q = query(commentsRef, orderBy('timestamp', 'asc'));
+    const unsub = onSnapshot(q, snap => {
       setComments(snap.docs.map(d => ({ id: d.id, ...d.data() } as Comment)));
     });
     return () => unsub();
@@ -131,19 +123,49 @@ export default function PostDetailPage() {
     else await setDoc(likeRef, { likedAt: Date.now() });
   };
 
+  // COMMENT: now sends email to the post author
   const submitComment = async () => {
     const uid = auth.currentUser?.uid;
     const user = auth.currentUser;
     if (!uid || !id || !newComment.trim()) return;
     const commentsRef = collection(db, 'posts', id, 'comments');
+    const commentText = newComment.trim();
+
     await addDoc(commentsRef, {
       uid,
       displayName: user?.displayName || 'Anonymous',
       photoURL: user?.photoURL || null,
-      text: newComment.trim(),
+      text: commentText,
       timestamp: serverTimestamp(),
     });
     setNewComment('');
+
+    try {
+      const postSnap = await getDoc(doc(db, 'posts', id));
+      if (postSnap.exists()) {
+        const p = postSnap.data() as Post;
+        const to_email = p.authorEmail || null;
+        const from_name = user?.displayName || 'Anonymous';
+        if (to_email && to_email !== user?.email) {
+          const post_link = `${window.location.origin}/post/${id}`;
+          await emailjs.send(
+            'service_28zemt7',
+            'template_rvhdgz4',
+            {
+              to_email,
+              to_name: p.displayName || '',
+              from_name,
+              comment_text: commentText,
+              post_link,
+              app_name: 'Ripple',
+            },
+            'q1XMFHhBE9upOF5cB'
+          );
+        }
+      }
+    } catch (err) {
+      console.error('Failed to send comment notification:', err);
+    }
   };
 
   const handleInlineSubmit = async (e: React.FormEvent) => {
@@ -168,7 +190,7 @@ export default function PostDetailPage() {
 
     setPosting(true);
     try {
-      const rippleId = post.rippleId || post.id; // fallback for older posts
+      const rippleId = post.rippleId || post.id;
       const nextGen = (post.generation ?? 0) + 1;
 
       const docRef = await addDoc(collection(db, 'posts'), {
@@ -179,32 +201,64 @@ export default function PostDetailPage() {
         timestamp: serverTimestamp(),
         recipients,
         recipient: recipients[0] ?? null,
-
         rippleId,
         parentPostId: post.id,
         generation: nextGen,
-
-        // ✅ ensure new child posts also carry authorEmail
-        authorEmail: user.email ?? null,
+        authorEmail: user.email || null,
       });
 
       await setDoc(doc(db, 'posts', docRef.id), { rippleId }, { merge: true });
 
-      const postLink = `${window.location.origin}/post/${docRef.id}`;
+      const post_link = `${window.location.origin}/post/${docRef.id}`;
+
+      // 1) Email new recipients
       await Promise.all(
         recipients.map((to_email) =>
           emailjs.send(
             'service_28zemt7',
             'template_567fc2a',
-            { to_email, from_name: user.displayName || 'Anonymous', post_text: postText, post_link: postLink, app_name: 'Ripple' },
+            { to_email, from_name: user.displayName || 'Anonymous', post_text: postText, post_link, app_name: 'Ripple' },
             'q1XMFHhBE9upOF5cB'
           )
         )
       );
 
-      // Jump to the ripple page and highlight the new post
-      navigate(`/ripple/${rippleId}?new=${docRef.id}`);
+      // 2) Notify prior participants
+      try {
+        const qPart = query(collection(db, 'posts'), where('rippleId', '==', rippleId));
+        const snap = await getDocs(qPart);
+        const participantEmails = new Set<string>();
+        snap.forEach((d) => {
+          const data = d.data() as Post;
+          if (data.authorEmail) participantEmails.add(data.authorEmail);
+        });
+        participantEmails.delete(user.email || '');
+        recipients.forEach((r) => participantEmails.delete(r));
 
+        const notifyList = Array.from(participantEmails);
+        const rippleLink = `${window.location.origin}/ripple/${rippleId}?new=${docRef.id}`;
+
+        await Promise.all(
+          notifyList.map((to_email) =>
+            emailjs.send(
+              'service_28zemt7',
+              'template_i631ek4',
+              {
+                to_email,
+                from_name: user.displayName || 'Someone',
+                post_text: postText,
+                post_link: rippleLink,
+                app_name: 'Ripple',
+              },
+              'q1XMFHhBE9upOF5cB'
+            )
+          )
+        );
+      } catch (err) {
+        console.error('Failed to notify ripple participants:', err);
+      }
+
+      navigate(`/ripple/${rippleId}?new=${docRef.id}`);
     } catch (err: any) {
       console.error('Error posting ripple or sending email:', err?.text || err);
       alert(`Couldn’t send email: ${err?.text || 'Unknown error'}`);
@@ -231,9 +285,7 @@ export default function PostDetailPage() {
 
   return (
     <div className="timeline">
-      <Link to="/" className="back tl">
-        ← Back to timeline
-      </Link>
+      <Link to="/" className="back tl">← Back to timeline</Link>
 
       <div className="timeline__post">
         <div className="timeline__post__content">
@@ -253,18 +305,11 @@ export default function PostDetailPage() {
 
         <div className='timeline__post__combo_line_element col-on-mobile'>
           {!isAuthed ? (
-            <div
-              onClick={loginWithGoogle}
-              className="ripple-button large"
-              aria-label="Login with Google to keep the ripple going"
-            >
+            <div onClick={loginWithGoogle} className="ripple-button large">
               Login with Google
             </div>
           ) : !showComposer ? (
-            <div
-              onClick={() => setShowComposer(true)}
-              className="ripple-button-container"
-            >
+            <div onClick={() => setShowComposer(true)} className="ripple-button-container">
               <div className="ripple-button">
                 <RippleAnimation />
                 Tag someone keep it going

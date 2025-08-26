@@ -12,6 +12,7 @@ import {
   setDoc,
   getDoc,
   deleteDoc,
+  getDocs
 } from 'firebase/firestore';
 import { db, auth } from '../services/firebase';
 import emailjs from '@emailjs/browser';
@@ -52,13 +53,13 @@ export default function RipplePage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Likes & comments state (per post)
+  // Likes & comments state
   const [likes, setLikes] = useState<Record<string, number>>({});
   const [userLikes, setUserLikes] = useState<Record<string, boolean>>({});
   const [comments, setComments] = useState<Record<string, Comment[]>>({});
   const [newComment, setNewComment] = useState<Record<string, string>>({});
 
-  // Always-visible composer
+  // Composer
   const [composeText, setComposeText] = useState('');
   const [composeEmail, setComposeEmail] = useState('');
   const [posting, setPosting] = useState(false);
@@ -67,7 +68,7 @@ export default function RipplePage() {
   // Highlight newly created post
   const [highlightId, setHighlightId] = useState<string | null>(null);
 
-  // Read ?new= for highlight + clean URL after a short delay
+  // Handle ?new= highlight
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const newId = params.get('new');
@@ -82,7 +83,7 @@ export default function RipplePage() {
     }
   }, [location.search, navigate, rippleId]);
 
-  // Fetch posts NEWEST → OLDEST so latest is at the top
+  // Fetch posts NEWEST → OLDEST
   useEffect(() => {
     if (!rippleId) return;
     const qy = query(
@@ -106,23 +107,11 @@ export default function RipplePage() {
             rippleId: (data.rippleId as string) || rippleId,
             parentPostId: data.parentPostId ?? null,
             generation: typeof data.generation === 'number' ? data.generation : 0,
-            authorEmail: (data.authorEmail as string) ?? null,
+            authorEmail: (data.authorEmail as string) || null,
           } as Post;
         });
-
         setPosts(rows);
         setLoading(false);
-
-        // 🔧 Tiny backfill: stamp authorEmail for *my* older posts missing it
-        const me = auth.currentUser;
-        if (me?.email) {
-          rows.forEach(p => {
-            if (p.uid === me.uid && !p.authorEmail) {
-              setDoc(doc(db, 'posts', p.id), { authorEmail: me.email }, { merge: true })
-                .catch(e => console.warn('authorEmail backfill failed for', p.id, e));
-            }
-          });
-        }
       }
     );
     return () => unsub();
@@ -134,7 +123,6 @@ export default function RipplePage() {
     const unsubs: Array<() => void> = [];
 
     posts.forEach((p) => {
-      // Likes
       const likesRef = collection(db, 'posts', p.id, 'likes');
       const unsubLikes = onSnapshot(likesRef, (likeSnap) => {
         setLikes((prev) => ({ ...prev, [p.id]: likeSnap.size }));
@@ -146,7 +134,6 @@ export default function RipplePage() {
       });
       unsubs.push(unsubLikes);
 
-      // Comments
       const commentsRef = collection(db, 'posts', p.id, 'comments');
       const commentsQ = query(commentsRef, orderBy('timestamp', 'asc'));
       const unsubComments = onSnapshot(commentsQ, (cSnap) => {
@@ -156,9 +143,7 @@ export default function RipplePage() {
       unsubs.push(unsubComments);
     });
 
-    return () => {
-      unsubs.forEach((fn) => fn());
-    };
+    return () => { unsubs.forEach((fn) => fn()); };
   }, [posts]);
 
   const newest = posts[0];
@@ -176,11 +161,13 @@ export default function RipplePage() {
     }
   };
 
+  // COMMENT: now sends email to the post author
   const handleCommentSubmit = async (postId: string) => {
     const uid = auth.currentUser?.uid;
     const user = auth.currentUser;
     const text = (newComment[postId] || '').trim();
     if (!uid || !text) return;
+
     const commentsRef = collection(db, 'posts', postId, 'comments');
     await addDoc(commentsRef, {
       uid,
@@ -190,6 +177,34 @@ export default function RipplePage() {
       timestamp: serverTimestamp(),
     });
     setNewComment((prev) => ({ ...prev, [postId]: '' }));
+
+    // Notify post owner (template_rvhdgz4)
+    try {
+      const postSnap = await getDoc(doc(db, 'posts', postId));
+      if (postSnap.exists()) {
+        const p = postSnap.data() as Post;
+        const to_email = p.authorEmail || null;
+        const from_name = user?.displayName || 'Anonymous';
+        if (to_email && to_email !== user?.email) {
+          const post_link = `${window.location.origin}/post/${postId}`;
+          await emailjs.send(
+            'service_28zemt7',
+            'template_rvhdgz4',
+            {
+              to_email,
+              to_name: p.displayName || '',
+              from_name,
+              comment_text: text,
+              post_link,
+              app_name: 'Ripple',
+            },
+            'q1XMFHhBE9upOF5cB'
+          );
+        }
+      }
+    } catch (err) {
+      console.error('Failed to send comment notification:', err);
+    }
   };
 
   const handleInlineSubmit = async (e: React.FormEvent) => {
@@ -214,10 +229,11 @@ export default function RipplePage() {
 
     setPosting(true);
     try {
+      // Continue from newest post
       const parentPostId = newest?.id || null;
       const nextGen = (newest?.generation ?? -1) + 1;
 
-      // Create the doc — include authorEmail on create
+      // Create the doc (with authorEmail)
       const docRef = await addDoc(collection(db, 'posts'), {
         uid: user.uid,
         displayName: user.displayName,
@@ -229,10 +245,10 @@ export default function RipplePage() {
         rippleId,
         parentPostId,
         generation: Math.max(nextGen, 0),
-        authorEmail: user.email ?? null,
+        authorEmail: user.email || null,
       });
 
-      // Optimistically prepend the new post
+      // Optimistic prepend
       setPosts((prev) => {
         if (prev.some((p) => p.id === docRef.id)) return prev;
         const optimistic: Post = {
@@ -245,7 +261,7 @@ export default function RipplePage() {
           rippleId,
           parentPostId,
           generation: Math.max(nextGen, 0),
-          authorEmail: user.email ?? null,
+          authorEmail: user.email || null,
         };
         return [optimistic, ...prev];
       });
@@ -253,10 +269,11 @@ export default function RipplePage() {
       setHighlightId(docRef.id);
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
-      // Ensure rippleId (defensive)
       await setDoc(doc(db, 'posts', docRef.id), { rippleId }, { merge: true });
 
       const postLink = `${window.location.origin}/post/${docRef.id}`;
+
+      // 1) Send initial emails to new recipients
       await Promise.all(
         recipients.map((to_email) =>
           emailjs.send(
@@ -267,6 +284,41 @@ export default function RipplePage() {
           )
         )
       );
+
+      // 2) Notify prior participants in this ripple (exclude self + new recipients)
+      try {
+        const qPart = query(collection(db, 'posts'), where('rippleId', '==', rippleId));
+        const snap = await getDocs(qPart);
+        const participantEmails = new Set<string>();
+        snap.forEach((d) => {
+          const data = d.data() as Post;
+          if (data.authorEmail) participantEmails.add(data.authorEmail);
+        });
+        participantEmails.delete(user.email || '');
+        recipients.forEach((r) => participantEmails.delete(r));
+
+        const notifyList = Array.from(participantEmails);
+        const rippleLink = `${window.location.origin}/ripple/${rippleId}?new=${docRef.id}`;
+
+        await Promise.all(
+          notifyList.map((to_email) =>
+            emailjs.send(
+              'service_28zemt7',
+              'template_i631ek4',
+              {
+                to_email,
+                from_name: user.displayName || 'Someone',
+                post_text: postText,
+                post_link: rippleLink,
+                app_name: 'Ripple',
+              },
+              'q1XMFHhBE9upOF5cB'
+            )
+          )
+        );
+      } catch (err) {
+        console.error('Failed to notify ripple participants:', err);
+      }
 
       setComposeText('');
       setComposeEmail('');
@@ -285,7 +337,7 @@ export default function RipplePage() {
       <Link to="/" className="back tl">← Back to timeline</Link>
       <WaveRipple />
 
-      {/* Always-visible composer */}
+      {/* Composer */}
       <div ref={composerRef} className="ripple-composer">
         <form onSubmit={handleInlineSubmit}>
           <textarea
@@ -311,8 +363,7 @@ export default function RipplePage() {
       </div>
 
       <h1 className="ripple-details-header">
-        Posts <strong>{posts.length} </strong>
-        People <strong>{uniqueAuthors} </strong>
+        Posts <strong>{posts.length}</strong> &nbsp; People <strong>{uniqueAuthors}</strong>
       </h1>
 
       {posts.length === 0 ? (
@@ -320,19 +371,12 @@ export default function RipplePage() {
       ) : (
         <section className="timeline">
           {posts.map((p) => (
-            <div
-              className={`timeline__post ${highlightId === p.id ? 'timeline__post--highlight' : ''}`}
-              key={p.id}
-            >
+            <div className={`timeline__post ${highlightId === p.id ? 'timeline__post--highlight' : ''}`} key={p.id}>
               <div className="timeline__post__text rainbow-text">
                 <div className="timeline__post__content">
                   {p.photoURL ? (
-                    <Link to={`/profile/${p.uid}`}>
-                      <img src={p.photoURL} alt="" />
-                    </Link>
-                  ) : (
-                    <div />
-                  )}
+                    <Link to={`/profile/${p.uid}`}><img src={p.photoURL} alt="" /></Link>
+                  ) : (<div />)}
                   <span className="timeline__post__user">{p.displayName || 'Anonymous'}</span>
                 </div>
 
@@ -390,6 +434,7 @@ export default function RipplePage() {
                   </div>
                 </div>
               </div>
+
             </div>
           ))}
         </section>
