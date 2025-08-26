@@ -298,6 +298,14 @@ export default function TimelinePage() {
                 }
               </p>
             )}
+        <div className="timeline__post__combo_line_element">
+            <div className="timeline__post__like">
+              <HeartButton
+                liked={userLikes[post.id]}
+                onClick={() => toggleLike(post.id)}
+              />
+              <span className="timeline__post__like_count">{likes[post.id] || 0}</span>
+            </div>
 
             {/* Ripple snippet */}
             {(typeof post.generation === 'number' || post.rippleId) && (
@@ -309,15 +317,9 @@ export default function TimelinePage() {
                 )}
               </div>
             )}
-        <div className="timeline__post__combo_line_element">
-            <div className="timeline__post__like">
-              <HeartButton
-                liked={userLikes[post.id]}
-                onClick={() => toggleLike(post.id)}
-              />
-              <span className="timeline__post__like_count">{likes[post.id] || 0}</span>
-            </div>
 
+
+          </div>
             <div className="timeline__post__commentscontainewr">
               <div className="timeline__post__commentsform">
                 <input
@@ -355,7 +357,7 @@ export default function TimelinePage() {
                 ))}
               </div>
             </div>
-          </div>
+
 
           </div>
         ))}
