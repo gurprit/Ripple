@@ -21,6 +21,29 @@ import { Link, useLocation } from 'react-router-dom';
 import RippleAnimation from '../components/RippleAnimation';
 import WaveRipple from '../components/WaveRippleAnimation';
 
+const EMAIL_DEBUG = true;
+const SERVICE_ID = 'service_28zemt7';
+const TEMPLATE_TAGGED = 'template_567fc2a';
+const TEMPLATE_RIPPLE_UPDATED = 'template_i631ek4';
+const TEMPLATE_COMMENT = 'template_rvhdgz4';
+const PUBLIC_KEY = 'q1XMFHhBE9upOF5cB';
+
+function sendEmailDBG(label: string, templateId: string, params: Record<string, any>) {
+  if (EMAIL_DEBUG) {
+    console.log(`[EMAIL TRY] ${label}`, { serviceId: SERVICE_ID, templateId, params });
+  }
+  return emailjs
+    .send(SERVICE_ID, templateId, params, PUBLIC_KEY)
+    .then(res => {
+      if (EMAIL_DEBUG) console.log(`[EMAIL OK] ${label}`, { status: res.status, text: res.text });
+      return res;
+    })
+    .catch(err => {
+      console.error(`[EMAIL FAIL] ${label}`, err);
+      throw err;
+    });
+}
+
 interface Post {
   id: string;
   uid: string;
@@ -29,17 +52,14 @@ interface Post {
   text: string;
   timestamp: any;
 
-  // Ripple fields
   rippleId?: string;
   parentPostId?: string | null;
   generation?: number;
 
-  // Recipients
   recipients?: string[];
   recipient?: string | null;
 
-  // NEW for notifications
-  authorEmail?: string | null;
+  authorEmail?: string | null; // << used for notifications
 }
 
 interface Comment {
@@ -64,7 +84,6 @@ export default function TimelinePage() {
   const [email, setEmail] = useState('');
   const [posting, setPosting] = useState(false);
 
-  // Read ripple context from URL (for “continue ripple” via timeline form)
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const fromRippleId = params.get('rippleId');
@@ -72,18 +91,19 @@ export default function TimelinePage() {
   const nextGen = Number(params.get('gen') || '1');
 
   useEffect(() => {
-    const q = query(collection(db, 'posts'), orderBy('timestamp', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const qy = query(collection(db, 'posts'), orderBy('timestamp', 'desc'));
+    const unsubscribe = onSnapshot(qy, (snapshot) => {
       const fetchedPosts = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as Post[];
 
+      if (EMAIL_DEBUG) console.log('[LOAD POSTS] timeline count =', fetchedPosts.length);
+
       setPosts(fetchedPosts);
       setLoading(false);
 
       fetchedPosts.forEach((post) => {
-        // Likes stream
         const likesRef = collection(db, 'posts', post.id, 'likes');
         onSnapshot(likesRef, (likeSnapshot) => {
           setLikes((prev) => ({ ...prev, [post.id]: likeSnapshot.size }));
@@ -94,7 +114,6 @@ export default function TimelinePage() {
           }
         });
 
-        // Comments stream
         const commentsRef = collection(db, 'posts', post.id, 'comments');
         const commentsQuery = query(commentsRef, orderBy('timestamp', 'asc'));
         onSnapshot(commentsQuery, (commentSnapshot) => {
@@ -118,56 +137,64 @@ export default function TimelinePage() {
     const likeDoc = await getDoc(likeRef);
 
     if (likeDoc.exists()) {
+      if (EMAIL_DEBUG) console.log('[LIKE] remove like for', postId);
       await deleteDoc(likeRef);
     } else {
+      if (EMAIL_DEBUG) console.log('[LIKE] add like for', postId);
       await setDoc(likeRef, { likedAt: Date.now() });
     }
   };
 
-  // COMMENT: now sends email to the post author
+  // COMMENT → notify post owner
   const handleCommentSubmit = async (postId: string) => {
     const uid = auth.currentUser?.uid;
     const user = auth.currentUser;
     const commentText = newComment[postId]?.trim();
-    if (!uid || !commentText) return;
+
+    if (!uid || !commentText) {
+      if (EMAIL_DEBUG) console.log('[COMMENT] blocked: uid or commentText missing', { uid, hasText: !!commentText });
+      return;
+    }
 
     const commentsRef = collection(db, 'posts', postId, 'comments');
-    await addDoc(commentsRef, {
+    const payload = {
       uid,
       displayName: user?.displayName || 'Anonymous',
       photoURL: user?.photoURL || null,
       text: commentText,
       timestamp: serverTimestamp(),
-    });
+    };
+    if (EMAIL_DEBUG) console.log('[COMMENT] addDoc payload', payload);
+    await addDoc(commentsRef, payload);
 
     setNewComment((prev) => ({ ...prev, [postId]: '' }));
 
-    // Send "Comment on good deed" email to the post owner (template_rvhdgz4)
     try {
       const postSnap = await getDoc(doc(db, 'posts', postId));
-      if (postSnap.exists()) {
-        const post = postSnap.data() as Post;
-        const to_email = post.authorEmail || null;
-        const from_name = user?.displayName || 'Anonymous';
-        if (to_email && to_email !== user?.email) {
-          const post_link = `${window.location.origin}/post/${postId}`;
-          await emailjs.send(
-            'service_28zemt7',
-            'template_rvhdgz4',
-            {
-              to_email,
-              to_name: post.displayName || '',
-              from_name,
-              comment_text: commentText,
-              post_link,
-              app_name: 'Ripple',
-            },
-            'q1XMFHhBE9upOF5cB'
-          );
-        }
+      if (!postSnap.exists()) {
+        console.warn('[COMMENT] postSnap missing for', postId);
+        return;
+      }
+      const post = postSnap.data() as Post;
+      const to_email = post.authorEmail || null;
+      const from_name = user?.displayName || 'Anonymous';
+      const post_link = `${window.location.origin}/post/${postId}`;
+      if (EMAIL_DEBUG) console.log('[COMMENT] notify owner?', { to_email, equalsSelf: to_email === user?.email, post });
+
+      if (to_email && to_email !== user?.email) {
+        await sendEmailDBG('comment -> owner', TEMPLATE_COMMENT, {
+          to_email,
+          to_name: post.displayName || '',
+          from_name,
+          comment_text: commentText,
+          post_link,
+          app_name: 'Ripple',
+        });
+      } else {
+        if (EMAIL_DEBUG) console.log('[COMMENT] skip notify (no to_email or self-comment)');
       }
     } catch (err) {
-      console.error('Failed to send comment notification:', err);
+      console.error('[COMMENT] notify error', err);
     }
   };
 
@@ -176,16 +203,17 @@ export default function TimelinePage() {
 
     const postText = text.trim();
     const rawEmail = email.trim();
-    if (!postText || !rawEmail) return;
-
+    if (!postText || !rawEmail) {
+      if (EMAIL_DEBUG) console.log('[NEW POST] blocked: missing text/email', { postText, rawEmail });
+      return;
+    }
     const user = auth.currentUser;
-    if (!user) return;
+    if (!user) {
+      if (EMAIL_DEBUG) console.log('[NEW POST] blocked: no user');
+      return;
+    }
 
-    const recipients = rawEmail
-      .split(/[,\s;]+/)
-      .map(e => e.trim())
-      .filter(Boolean);
-
+    const recipients = rawEmail.split(/[,\s;]+/).map(e => e.trim()).filter(Boolean);
     const bad = recipients.find(r => !emailRegex.test(r));
     if (bad) {
       alert(`That email looks off: "${bad}". Please fix and try again.`);
@@ -195,7 +223,6 @@ export default function TimelinePage() {
     setPosting(true);
 
     try {
-      // 1) Create the post (root or child) with authorEmail
       const basePost = {
         uid: user.uid,
         displayName: user.displayName,
@@ -210,83 +237,64 @@ export default function TimelinePage() {
         parentPostId: fromRippleId ? parent : null,
         generation: fromRippleId ? nextGen : 0,
       };
+      if (EMAIL_DEBUG) console.log('[NEW POST] addDoc payload', basePost);
 
       const docRef = await addDoc(collection(db, 'posts'), basePost);
 
-      // 2) If this is a root, set rippleId = this doc id
-      let effectiveRippleId = fromRippleId;
+      // Set rippleId for root
+      let effectiveRippleId = fromRippleId || docRef.id;
       if (!fromRippleId) {
-        effectiveRippleId = docRef.id;
+        if (EMAIL_DEBUG) console.log('[NEW POST] setting rippleId (root)', docRef.id);
         await setDoc(doc(db, 'posts', docRef.id), { rippleId: docRef.id }, { merge: true });
       }
 
       const postLink = `${window.location.origin}/post/${docRef.id}`;
 
-      // 3) Send initial emails to new recipients (existing template)
-      await Promise.all(
-        recipients.map((to_email) =>
-          emailjs.send(
-            'service_28zemt7',
-            'template_567fc2a',
-            {
-              to_email,
-              from_name: user.displayName || 'Anonymous',
-              post_text: postText,
-              post_link: postLink,
-              app_name: 'Ripple',
-            },
-            'q1XMFHhBE9upOF5cB'
-          )
-        )
-      );
+      // Email tagged recipients
+      for (const to_email of recipients) {
+        await sendEmailDBG('tagged (new post)', TEMPLATE_TAGGED, {
+          to_email,
+          from_name: user.displayName || 'Anonymous',
+          post_text: postText,
+          post_link: postLink,
+          app_name: 'Ripple',
+        });
+      }
 
-      // 4) If continuing a ripple, also notify prior participants (template_i631ek4)
+      // Notify prior participants if continuing
       if (effectiveRippleId) {
         try {
-          const qPart = query(
-            collection(db, 'posts'),
-            where('rippleId', '==', effectiveRippleId)
-          );
+          const qPart = query(collection(db, 'posts'), where('rippleId', '==', effectiveRippleId));
           const snap = await getDocs(qPart);
-
           const participantEmails = new Set<string>();
           snap.forEach((d) => {
             const data = d.data() as Post;
             if (data.authorEmail) participantEmails.add(data.authorEmail);
           });
-
-          // Don’t notify yourself or the newly-tagged recipients
           participantEmails.delete(user.email || '');
           recipients.forEach((r) => participantEmails.delete(r));
-
           const notifyList = Array.from(participantEmails);
-          const rippleLink = `${window.location.origin}/ripple/${effectiveRippleId}?new=${docRef.id}`;
+          if (EMAIL_DEBUG) console.log('[RIPPLE UPDATED] notifyList', notifyList);
 
-          await Promise.all(
-            notifyList.map((to_email) =>
-              emailjs.send(
-                'service_28zemt7',
-                'template_i631ek4',
-                {
-                  to_email,
-                  from_name: user.displayName || 'Someone',
-                  post_text: postText,
-                  post_link: rippleLink,
-                  app_name: 'Ripple',
-                },
-                'q1XMFHhBE9upOF5cB'
-              )
-            )
-          );
+          const rippleLink = `${window.location.origin}/ripple/${effectiveRippleId}?new=${docRef.id}`;
+          for (const to_email of notifyList) {
+            await sendEmailDBG('ripple updated', TEMPLATE_RIPPLE_UPDATED, {
+              to_email,
+              from_name: user.displayName || 'Someone',
+              post_text: postText,
+              post_link: rippleLink,
+              app_name: 'Ripple',
+            });
+          }
         } catch (err) {
-          console.error('Failed to notify ripple participants:', err);
+          console.error('[RIPPLE UPDATED] error collecting participants', err);
         }
       }
 
       setText('');
       setEmail('');
     } catch (err: any) {
-      console.error('Error posting ripple or sending email:', err?.text || err);
+      console.error('[NEW POST] error', err?.text || err);
       alert(`Couldn’t send email: ${err?.text || 'Unknown error'}`);
     } finally {
       setPosting(false);
@@ -312,15 +320,10 @@ export default function TimelinePage() {
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-          <button
-            type="submit"
-            className="ripple-button__composer ripple-button "
-            disabled={posting}
-          >
+          <button type="submit" className="ripple-button__composer ripple-button " disabled={posting}>
             <RippleAnimation />
             <span>{posting ? 'Rippling...' : 'Create ripple'}</span>
           </button>
-
           {fromRippleId && (
             <p style={{ marginTop: 8, fontSize: 12, color: '#6b7280' }}>
               Continuing ripple <code>{fromRippleId.slice(0, 6)}…</code> · Wave {nextGen}

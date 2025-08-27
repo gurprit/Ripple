@@ -21,6 +21,27 @@ import SlabText from '../components/SlabText';
 import RippleAnimation from '../components/RippleAnimation';
 import HeartButton from '../components/HeartButton';
 
+const EMAIL_DEBUG = true;
+const SERVICE_ID = 'service_28zemt7';
+const TEMPLATE_TAGGED = 'template_567fc2a';
+const TEMPLATE_RIPPLE_UPDATED = 'template_i631ek4';
+const TEMPLATE_COMMENT = 'template_rvhdgz4';
+const PUBLIC_KEY = 'q1XMFHhBE9upOF5cB';
+
+function sendEmailDBG(label: string, templateId: string, params: Record<string, any>) {
+  if (EMAIL_DEBUG) console.log(`[EMAIL TRY] ${label}`, { serviceId: SERVICE_ID, templateId, params });
+  return emailjs
+    .send(SERVICE_ID, templateId, params, PUBLIC_KEY)
+    .then(res => {
+      if (EMAIL_DEBUG) console.log(`[EMAIL OK] ${label}`, { status: res.status, text: res.text });
+      return res;
+    })
+    .catch(err => {
+      console.error(`[EMAIL FAIL] ${label}`, err);
+      throw err;
+    });
+}
+
 interface Post {
   id: string;
   text: string;
@@ -53,22 +74,18 @@ export default function RipplePage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Likes & comments state
   const [likes, setLikes] = useState<Record<string, number>>({});
   const [userLikes, setUserLikes] = useState<Record<string, boolean>>({});
   const [comments, setComments] = useState<Record<string, Comment[]>>({});
   const [newComment, setNewComment] = useState<Record<string, string>>({});
 
-  // Composer
   const [composeText, setComposeText] = useState('');
   const [composeEmail, setComposeEmail] = useState('');
   const [posting, setPosting] = useState(false);
   const composerRef = useRef<HTMLDivElement | null>(null);
 
-  // Highlight newly created post
   const [highlightId, setHighlightId] = useState<string | null>(null);
 
-  // Handle ?new= highlight
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const newId = params.get('new');
@@ -83,7 +100,6 @@ export default function RipplePage() {
     }
   }, [location.search, navigate, rippleId]);
 
-  // Fetch posts NEWEST → OLDEST
   useEffect(() => {
     if (!rippleId) return;
     const qy = query(
@@ -110,6 +126,7 @@ export default function RipplePage() {
             authorEmail: (data.authorEmail as string) || null,
           } as Post;
         });
+        if (EMAIL_DEBUG) console.log('[RIPPLE LOAD] posts:', rows.length);
         setPosts(rows);
         setLoading(false);
       }
@@ -117,7 +134,6 @@ export default function RipplePage() {
     return () => unsub();
   }, [rippleId]);
 
-  // Subscribe to likes & comments per post
   useEffect(() => {
     if (!posts.length) return;
     const unsubs: Array<() => void> = [];
@@ -155,55 +171,61 @@ export default function RipplePage() {
     const likeRef = doc(db, 'posts', postId, 'likes', uid);
     const snap = await getDoc(likeRef);
     if (snap.exists()) {
+      if (EMAIL_DEBUG) console.log('[LIKE] remove', postId);
       await deleteDoc(likeRef);
     } else {
+      if (EMAIL_DEBUG) console.log('[LIKE] add', postId);
       await setDoc(likeRef, { likedAt: Date.now() });
     }
   };
 
-  // COMMENT: now sends email to the post author
+  // COMMENT → notify owner
   const handleCommentSubmit = async (postId: string) => {
     const uid = auth.currentUser?.uid;
     const user = auth.currentUser;
     const text = (newComment[postId] || '').trim();
-    if (!uid || !text) return;
+    if (!uid || !text) {
+      if (EMAIL_DEBUG) console.log('[COMMENT] blocked on ripple page', { uid, hasText: !!text });
+      return;
+    }
 
     const commentsRef = collection(db, 'posts', postId, 'comments');
-    await addDoc(commentsRef, {
+    const payload = {
       uid,
       displayName: user?.displayName || 'Anonymous',
       photoURL: user?.photoURL || null,
       text,
       timestamp: serverTimestamp(),
-    });
+    };
+    if (EMAIL_DEBUG) console.log('[COMMENT] addDoc payload (ripple)', payload);
+    await addDoc(commentsRef, payload);
     setNewComment((prev) => ({ ...prev, [postId]: '' }));
 
-    // Notify post owner (template_rvhdgz4)
     try {
       const postSnap = await getDoc(doc(db, 'posts', postId));
-      if (postSnap.exists()) {
-        const p = postSnap.data() as Post;
-        const to_email = p.authorEmail || null;
-        const from_name = user?.displayName || 'Anonymous';
-        if (to_email && to_email !== user?.email) {
-          const post_link = `${window.location.origin}/post/${postId}`;
-          await emailjs.send(
-            'service_28zemt7',
-            'template_rvhdgz4',
-            {
-              to_email,
-              to_name: p.displayName || '',
-              from_name,
-              comment_text: text,
-              post_link,
-              app_name: 'Ripple',
-            },
-            'q1XMFHhBE9upOF5cB'
-          );
-        }
+      if (!postSnap.exists()) {
+        console.warn('[COMMENT] no postSnap on ripple for', postId);
+        return;
+      }
+      const p = postSnap.data() as Post;
+      const to_email = p.authorEmail || null;
+      if (EMAIL_DEBUG) console.log('[COMMENT] notify owner from ripple?', { to_email, equalsSelf: to_email === user?.email, p });
+
+      if (to_email && to_email !== user?.email) {
+        const post_link = `${window.location.origin}/post/${postId}`;
+        await sendEmailDBG('comment -> owner', TEMPLATE_COMMENT, {
+          to_email,
+          to_name: p.displayName || '',
+          from_name: user?.displayName || 'Anonymous',
+          comment_text: text,
+          post_link,
+          app_name: 'Ripple',
+        });
+      } else {
+        if (EMAIL_DEBUG) console.log('[COMMENT] skip owner notify (no to_email or self)');
       }
     } catch (err) {
-      console.error('Failed to send comment notification:', err);
+      console.error('[COMMENT] notify error (ripple)', err);
     }
   };
 
@@ -214,13 +236,12 @@ export default function RipplePage() {
     const user = auth.currentUser;
     const postText = composeText.trim();
     const rawEmail = composeEmail.trim();
-    if (!user || !postText || !rawEmail) return;
+    if (!user || !postText || !rawEmail) {
+      if (EMAIL_DEBUG) console.log('[ADD TO RIPPLE] blocked', { hasUser: !!user, hasText: !!postText, hasEmail: !!rawEmail });
+      return;
+    }
 
-    const recipients = rawEmail
-      .split(/[,\s;]+/)
-      .map((e) => e.trim())
-      .filter(Boolean);
-
+    const recipients = rawEmail.split(/[,\s;]+/).map((e) => e.trim()).filter(Boolean);
     const bad = recipients.find((r) => !emailRegex.test(r));
     if (bad) {
       alert(`That email looks off: "${bad}". Please fix and try again.`);
@@ -229,12 +250,10 @@ export default function RipplePage() {
 
     setPosting(true);
     try {
-      // Continue from newest post
       const parentPostId = newest?.id || null;
       const nextGen = (newest?.generation ?? -1) + 1;
 
-      // Create the doc (with authorEmail)
-      const docRef = await addDoc(collection(db, 'posts'), {
+      const payload = {
         uid: user.uid,
         displayName: user.displayName,
         photoURL: user.photoURL,
@@ -246,9 +265,11 @@ export default function RipplePage() {
         parentPostId,
         generation: Math.max(nextGen, 0),
         authorEmail: user.email || null,
-      });
+      };
+      if (EMAIL_DEBUG) console.log('[ADD TO RIPPLE] addDoc payload', payload);
 
-      // Optimistic prepend
+      const docRef = await addDoc(collection(db, 'posts'), payload);
+
       setPosts((prev) => {
         if (prev.some((p) => p.id === docRef.id)) return prev;
         const optimistic: Post = {
@@ -273,19 +294,18 @@ export default function RipplePage() {
 
       const postLink = `${window.location.origin}/post/${docRef.id}`;
 
-      // 1) Send initial emails to new recipients
-      await Promise.all(
-        recipients.map((to_email) =>
-          emailjs.send(
-            'service_28zemt7',
-            'template_567fc2a',
-            { to_email, from_name: user.displayName || 'Anonymous', post_text: postText, post_link: postLink, app_name: 'Ripple' },
-            'q1XMFHhBE9upOF5cB'
-          )
-        )
-      );
+      // 1) Email tagged recipients
+      for (const to_email of recipients) {
+        await sendEmailDBG('tagged (add to ripple)', TEMPLATE_TAGGED, {
+          to_email,
+          from_name: user.displayName || 'Anonymous',
+          post_text: postText,
+          post_link: postLink,
+          app_name: 'Ripple',
+        });
+      }
 
-      // 2) Notify prior participants in this ripple (exclude self + new recipients)
+      // 2) Notify prior participants (exclude self + new recipients)
       try {
         const qPart = query(collection(db, 'posts'), where('rippleId', '==', rippleId));
         const snap = await getDocs(qPart);
@@ -298,32 +318,26 @@ export default function RipplePage() {
         recipients.forEach((r) => participantEmails.delete(r));
 
         const notifyList = Array.from(participantEmails);
-        const rippleLink = `${window.location.origin}/ripple/${rippleId}?new=${docRef.id}`;
+        if (EMAIL_DEBUG) console.log('[RIPPLE UPDATED] notifyList (ripple page)', notifyList);
 
-        await Promise.all(
-          notifyList.map((to_email) =>
-            emailjs.send(
-              'service_28zemt7',
-              'template_i631ek4',
-              {
-                to_email,
-                from_name: user.displayName || 'Someone',
-                post_text: postText,
-                post_link: rippleLink,
-                app_name: 'Ripple',
-              },
-              'q1XMFHhBE9upOF5cB'
-            )
-          )
-        );
+        const rippleLink = `${window.location.origin}/ripple/${rippleId}?new=${docRef.id}`;
+        for (const to_email of notifyList) {
+          await sendEmailDBG('ripple updated', TEMPLATE_RIPPLE_UPDATED, {
+            to_email,
+            from_name: user.displayName || 'Someone',
+            post_text: postText,
+            post_link: rippleLink,
+            app_name: 'Ripple',
+          });
+        }
       } catch (err) {
-        console.error('Failed to notify ripple participants:', err);
+        console.error('[RIPPLE UPDATED] error (ripple page)', err);
       }
 
       setComposeText('');
       setComposeEmail('');
     } catch (err: any) {
-      console.error('Error posting ripple or sending email:', err?.text || err);
+      console.error('[ADD TO RIPPLE] error', err?.text || err);
       alert(`Couldn’t send email: ${err?.text || 'Unknown error'}`);
     } finally {
       setPosting(false);
@@ -337,7 +351,6 @@ export default function RipplePage() {
       <Link to="/" className="back tl">← Back to timeline</Link>
       <WaveRipple />
 
-      {/* Composer */}
       <div ref={composerRef} className="ripple-composer">
         <form onSubmit={handleInlineSubmit}>
           <textarea
@@ -386,7 +399,6 @@ export default function RipplePage() {
               </div>
 
               <div className="timeline__post__combo_line_element">
-                {/* Likes */}
                 <div className="timeline__post__like">
                   <HeartButton
                     liked={!!userLikes[p.id]}
@@ -395,16 +407,13 @@ export default function RipplePage() {
                   <span className="timeline__post__like_count">{likes[p.id] || 0}</span>
                 </div>
 
-                {/* Comments */}
                 <div className="timeline__post__commentscontainewr">
                   <div className="timeline__post__commentsform">
                     <input
                       type="text"
                       placeholder="Add comment..."
                       value={newComment[p.id] || ''}
-                      onChange={(e) =>
-                        setNewComment((prev) => ({ ...prev, [p.id]: e.target.value }))
-                      }
+                      onChange={(e) => setNewComment((prev) => ({ ...prev, [p.id]: e.target.value }))}
                       className="flex-1 border rounded p-1 text-sm mr-2"
                     />
                     <button
@@ -420,14 +429,8 @@ export default function RipplePage() {
                     {comments[p.id]?.map((c) => (
                       <div key={c.id} className="timeline__post__comment">
                         {c.photoURL ? (
-                          <img
-                            src={c.photoURL}
-                            alt={c.displayName || 'Anon'}
-                            className="timeline__post__comment_profile"
-                          />
-                        ) : (
-                          <div className="no-photo" />
-                        )}
+                          <img src={c.photoURL} alt={c.displayName || 'Anon'} className="timeline__post__comment_profile" />
+                        ) : (<div className="no-photo" />)}
                         <span className="timeline__post__comment_text">{c.text}</span>
                       </div>
                     ))}

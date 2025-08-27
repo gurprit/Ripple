@@ -26,6 +26,27 @@ import HeartButton from '../components/HeartButton';
 import SlabText from '../components/SlabText';
 import RippleAnimation from '../components/RippleAnimation';
 
+const EMAIL_DEBUG = true;
+const SERVICE_ID = 'service_28zemt7';
+const TEMPLATE_TAGGED = 'template_567fc2a';
+const TEMPLATE_RIPPLE_UPDATED = 'template_i631ek4';
+const TEMPLATE_COMMENT = 'template_rvhdgz4';
+const PUBLIC_KEY = 'q1XMFHhBE9upOF5cB';
+
+function sendEmailDBG(label: string, templateId: string, params: Record<string, any>) {
+  if (EMAIL_DEBUG) console.log(`[EMAIL TRY] ${label}`, { serviceId: SERVICE_ID, templateId, params });
+  return emailjs
+    .send(SERVICE_ID, templateId, params, PUBLIC_KEY)
+    .then(res => {
+      if (EMAIL_DEBUG) console.log(`[EMAIL OK] ${label}`, { status: res.status, text: res.text });
+      return res;
+    })
+    .catch(err => {
+      console.error(`[EMAIL FAIL] ${label}`, err);
+      throw err;
+    });
+}
+
 interface Post {
   id: string;
   uid: string;
@@ -87,7 +108,11 @@ export default function PostDetailPage() {
       const docRef = doc(db, 'posts', id);
       const snap = await getDoc(docRef);
       if (snap.exists()) {
-        setPost({ id: snap.id, ...snap.data() } as Post);
+        const p = { id: snap.id, ...snap.data() } as Post;
+        if (EMAIL_DEBUG) console.log('[POST DETAIL LOAD]', p);
+        setPost(p);
+      } else {
+        if (EMAIL_DEBUG) console.log('[POST DETAIL LOAD] not found', id);
       }
       setLoading(false);
     })();
@@ -107,9 +132,10 @@ export default function PostDetailPage() {
   useEffect(() => {
     if (!id) return;
     const commentsRef = collection(db, 'posts', id, 'comments');
-    const q = query(commentsRef, orderBy('timestamp', 'asc'));
-    const unsub = onSnapshot(q, snap => {
-      setComments(snap.docs.map(d => ({ id: d.id, ...d.data() } as Comment)));
+    const qy = query(commentsRef, orderBy('timestamp', 'asc'));
+    const unsub = onSnapshot(qy, snap => {
+      const rows = snap.docs.map(d => ({ id: d.id, ...d.data() } as Comment));
+      setComments(rows);
     });
     return () => unsub();
   }, [id]);
@@ -119,52 +145,61 @@ export default function PostDetailPage() {
     if (!uid || !id) return;
     const likeRef = doc(db, 'posts', id, 'likes', uid);
     const likeSnap = await getDoc(likeRef);
-    if (likeSnap.exists()) await deleteDoc(likeRef);
-    else await setDoc(likeRef, { likedAt: Date.now() });
+    if (likeSnap.exists()) {
+      if (EMAIL_DEBUG) console.log('[LIKE] remove on post', id);
+      await deleteDoc(likeRef);
+    } else {
+      if (EMAIL_DEBUG) console.log('[LIKE] add on post', id);
+      await setDoc(likeRef, { likedAt: Date.now() });
+    }
   };
 
-  // COMMENT: now sends email to the post author
+  // COMMENT → notify owner
   const submitComment = async () => {
     const uid = auth.currentUser?.uid;
     const user = auth.currentUser;
-    if (!uid || !id || !newComment.trim()) return;
+    if (!uid || !id || !newComment.trim()) {
+      if (EMAIL_DEBUG) console.log('[COMMENT] blocked on post', { uid, id, hasText: !!newComment.trim() });
+      return;
+    }
     const commentsRef = collection(db, 'posts', id, 'comments');
     const commentText = newComment.trim();
-
-    await addDoc(commentsRef, {
+    const payload = {
       uid,
       displayName: user?.displayName || 'Anonymous',
       photoURL: user?.photoURL || null,
       text: commentText,
       timestamp: serverTimestamp(),
-    });
+    };
+    if (EMAIL_DEBUG) console.log('[COMMENT] addDoc payload (post)', payload);
+    await addDoc(commentsRef, payload);
     setNewComment('');
 
     try {
       const postSnap = await getDoc(doc(db, 'posts', id));
-      if (postSnap.exists()) {
-        const p = postSnap.data() as Post;
-        const to_email = p.authorEmail || null;
-        const from_name = user?.displayName || 'Anonymous';
-        if (to_email && to_email !== user?.email) {
-          const post_link = `${window.location.origin}/post/${id}`;
-          await emailjs.send(
-            'service_28zemt7',
-            'template_rvhdgz4',
-            {
-              to_email,
-              to_name: p.displayName || '',
-              from_name,
-              comment_text: commentText,
-              post_link,
-              app_name: 'Ripple',
-            },
-            'q1XMFHhBE9upOF5cB'
-          );
-        }
+      if (!postSnap.exists()) {
+        console.warn('[COMMENT] post not found for notify', id);
+        return;
+      }
+      const p = postSnap.data() as Post;
+      const to_email = p.authorEmail || null;
+      if (EMAIL_DEBUG) console.log('[COMMENT] notify owner (post)?', { to_email, equalsSelf: to_email === user?.email, p });
+
+      if (to_email && to_email !== user?.email) {
+        const post_link = `${window.location.origin}/post/${id}`;
+        await sendEmailDBG('comment -> owner', TEMPLATE_COMMENT, {
+          to_email,
+          to_name: p.displayName || '',
+          from_name: user?.displayName || 'Anonymous',
+          comment_text: commentText,
+          post_link,
+          app_name: 'Ripple',
+        });
+      } else {
+        if (EMAIL_DEBUG) console.log('[COMMENT] skip owner notify (post) - no email or self');
       }
     } catch (err) {
-      console.error('Failed to send comment notification:', err);
+      console.error('[COMMENT] notify error (post)', err);
     }
   };
 
@@ -175,13 +210,12 @@ export default function PostDetailPage() {
     const user = auth.currentUser;
     const postText = composeText.trim();
     const rawEmail = composeEmail.trim();
-    if (!user || !postText || !rawEmail) return;
+    if (!user || !postText || !rawEmail) {
+      if (EMAIL_DEBUG) console.log('[CONTINUE RIPPLE] blocked', { hasUser: !!user, hasText: !!postText, hasEmail: !!rawEmail });
+      return;
+    }
 
-    const recipients = rawEmail
-      .split(/[,\s;]+/)
-      .map(e => e.trim())
-      .filter(Boolean);
-
+    const recipients = rawEmail.split(/[,\s;]+/).map(e => e.trim()).filter(Boolean);
     const bad = recipients.find(r => !emailRegex.test(r));
     if (bad) {
       alert(`That email looks off: "${bad}". Please fix and try again.`);
@@ -193,7 +227,7 @@ export default function PostDetailPage() {
       const rippleId = post.rippleId || post.id;
       const nextGen = (post.generation ?? 0) + 1;
 
-      const docRef = await addDoc(collection(db, 'posts'), {
+      const payload = {
         uid: user.uid,
         displayName: user.displayName,
         photoURL: user.photoURL,
@@ -205,23 +239,25 @@ export default function PostDetailPage() {
         parentPostId: post.id,
         generation: nextGen,
         authorEmail: user.email || null,
-      });
+      };
+      if (EMAIL_DEBUG) console.log('[CONTINUE RIPPLE] addDoc payload', payload);
+
+      const docRef = await addDoc(collection(db, 'posts'), payload);
 
       await setDoc(doc(db, 'posts', docRef.id), { rippleId }, { merge: true });
 
       const post_link = `${window.location.origin}/post/${docRef.id}`;
 
       // 1) Email new recipients
-      await Promise.all(
-        recipients.map((to_email) =>
-          emailjs.send(
-            'service_28zemt7',
-            'template_567fc2a',
-            { to_email, from_name: user.displayName || 'Anonymous', post_text: postText, post_link, app_name: 'Ripple' },
-            'q1XMFHhBE9upOF5cB'
-          )
-        )
-      );
+      for (const to_email of recipients) {
+        await sendEmailDBG('tagged (continue ripple)', TEMPLATE_TAGGED, {
+          to_email,
+          from_name: user.displayName || 'Anonymous',
+          post_text: postText,
+          post_link,
+          app_name: 'Ripple',
+        });
+      }
 
       // 2) Notify prior participants
       try {
@@ -236,31 +272,25 @@ export default function PostDetailPage() {
         recipients.forEach((r) => participantEmails.delete(r));
 
         const notifyList = Array.from(participantEmails);
-        const rippleLink = `${window.location.origin}/ripple/${rippleId}?new=${docRef.id}`;
+        if (EMAIL_DEBUG) console.log('[RIPPLE UPDATED] notifyList (post detail)', notifyList);
 
-        await Promise.all(
-          notifyList.map((to_email) =>
-            emailjs.send(
-              'service_28zemt7',
-              'template_i631ek4',
-              {
-                to_email,
-                from_name: user.displayName || 'Someone',
-                post_text: postText,
-                post_link: rippleLink,
-                app_name: 'Ripple',
-              },
-              'q1XMFHhBE9upOF5cB'
-            )
-          )
-        );
+        const rippleLink = `${window.location.origin}/ripple/${rippleId}?new=${docRef.id}`;
+        for (const to_email of notifyList) {
+          await sendEmailDBG('ripple updated', TEMPLATE_RIPPLE_UPDATED, {
+            to_email,
+            from_name: user.displayName || 'Someone',
+            post_text: postText,
+            post_link: rippleLink,
+            app_name: 'Ripple',
+          });
+        }
       } catch (err) {
-        console.error('Failed to notify ripple participants:', err);
+        console.error('[RIPPLE UPDATED] error (post detail)', err);
       }
 
       navigate(`/ripple/${rippleId}?new=${docRef.id}`);
     } catch (err: any) {
-      console.error('Error posting ripple or sending email:', err?.text || err);
+      console.error('[CONTINUE RIPPLE] error', err?.text || err);
       alert(`Couldn’t send email: ${err?.text || 'Unknown error'}`);
     } finally {
       setPosting(false);
@@ -357,13 +387,11 @@ export default function PostDetailPage() {
         </div>
 
         <div className="timeline__post__combo_line_element">
-          {/* Likes */}
           <div className="timeline__post__like">
             <HeartButton liked={userLiked} onClick={toggleLike} />
             <span className="timeline__post__like_count">{likeCount}</span>
           </div>
 
-          {/* Comments */}
           <div className="timeline__post__commentscontainewr">
             <div className="timeline__post__commentsform">
               <input
