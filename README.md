@@ -7,14 +7,13 @@ This is a personal side project built with **React**, **TypeScript**, and **Vite
 
 ---
 
-## ✨ Key Features (Planned)
+## ✨ Key Features
 
 - 🌱 Share acts of kindness — big or small
 - 💬 Tag friends to invite them to contribute their own ripple
 - 🌀 Visualize ripple chains — how one act leads to many
 - 🧩 Component-driven UI using React + TypeScript
 - 🎨 Planned styling via Tailwind or styled-components
-- ✅ Functional testing (coming soon) with Jest & React Testing Library
 
 ---
 
@@ -23,20 +22,32 @@ This is a personal side project built with **React**, **TypeScript**, and **Vite
 - [React](https://reactjs.org/)
 - [TypeScript](https://www.typescriptlang.org/)
 - [Vite](https://vitejs.dev/)
-- [Jest](https://jestjs.io/) + [React Testing Library](https://testing-library.com/) *(planned)*
+- Firebase (Auth, Firestore, Hosting)
+- EmailJS (SMTP via Zoho/custom)
+- Lottie for micro-interactions
 
 ---
 
 ## 🚧 Project Status
 
-This project is in early development.  
-Initial scaffolding is complete and the component system is being built out.
+Live!! https://rppl.life
 
-Next steps:
-- Build ripple-post UI components
-- Add user tagging and mock data interactions
-- Style the feed using custom Css
-- Implement tests with Jest
+✅ Public site deployed to Firebase Hosting
+✅ Auth via Google Sign-In
+✅ Post feed & detail pages
+✅ Ripples (threaded chains) with per-ripple page
+✅ Email notifications
+
+Tagged recipient invite
+
+“Ripple updated” (someone added to your ripple)
+
+“New comment” (someone commented on your post)
+
+✅ Likes & comments (realtime)
+✅ User profiles (avatar, name, email, user’s posts)
+✅ Mobile styles (baseline)
+⏳ SCSS refactor / full responsive polish (next)
 
 ---
 
