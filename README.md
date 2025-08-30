@@ -22,8 +22,8 @@ This is a personal side project built with **React**, **TypeScript**, and **Vite
 - [React](https://reactjs.org/)
 - [TypeScript](https://www.typescriptlang.org/)
 - [Vite](https://vitejs.dev/)
-- Firebase (Auth, Firestore, Hosting)
-- EmailJS (SMTP via Zoho/custom)
+- [Firebase](https://firebase.google.com/) (Auth, Firestore, Hosting)
+- [EmailJS](https://www.emailjs.com/) (SMTP via Zoho/custom)
 - Lottie for micro-interactions
 
 ---
