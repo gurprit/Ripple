@@ -32,22 +32,19 @@ This is a personal side project built with **React**, **TypeScript**, and **Vite
 
 Live!! https://rppl.life
 
-✅ Public site deployed to Firebase Hosting
-✅ Auth via Google Sign-In
-✅ Post feed & detail pages
-✅ Ripples (threaded chains) with per-ripple page
-✅ Email notifications
+- ✅ Public site deployed to Firebase Hosting
+- ✅ Auth via Google Sign-In
+- ✅ Post feed & detail pages
+- ✅ Ripples (threaded chains) with per-ripple page
+- ✅ Email notifications
+- ✅ Tagged recipient invite
+- ✅ “Ripple updated” (someone added to your ripple)
+- ✅ “New comment” (someone commented on your post)
 
-Tagged recipient invite
-
-“Ripple updated” (someone added to your ripple)
-
-“New comment” (someone commented on your post)
-
-✅ Likes & comments (realtime)
-✅ User profiles (avatar, name, email, user’s posts)
-✅ Mobile styles (baseline)
-⏳ SCSS refactor / full responsive polish (next)
+- ✅ Likes & comments (realtime)
+- ✅ User profiles (avatar, name, email, user’s posts)
+- ✅ Mobile styles (baseline)
+- ⏳ SCSS refactor / full responsive polish (next)
 
 ---
 
