@@ -18,9 +18,7 @@ export default function RequireAuth({ children }: { children: ReactNode }) {
 
   if (user === undefined) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p>Checking authentication...</p>
-      </div>
+ <div className="loading-screen"><div className="loading-animation"><div></div><div></div><div></div><div></div><div></div><div></div></div></div>
     );
   }
 

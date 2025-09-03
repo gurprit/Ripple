@@ -21,7 +21,6 @@ import { Link, useLocation } from 'react-router-dom';
 import RippleAnimation from '../components/RippleAnimation';
 import WaveRipple from '../components/WaveRippleAnimation';
 
-const EMAIL_DEBUG = false;
 const SERVICE_ID = 'service_28zemt7';
 const TEMPLATE_TAGGED = 'template_567fc2a';
 const TEMPLATE_RIPPLE_UPDATED = 'template_i631ek4';
@@ -29,13 +28,10 @@ const TEMPLATE_COMMENT = 'template_rvhdgz4';
 const PUBLIC_KEY = 'q1XMFHhBE9upOF5cB';
 
 function sendEmailDBG(label: string, templateId: string, params: Record<string, any>) {
-  if (EMAIL_DEBUG) {
-    console.log(`[EMAIL TRY] ${label}`, { serviceId: SERVICE_ID, templateId, params });
-  }
+
   return emailjs
     .send(SERVICE_ID, templateId, params, PUBLIC_KEY)
     .then(res => {
-      if (EMAIL_DEBUG) console.log(`[EMAIL OK] ${label}`, { status: res.status, text: res.text });
       return res;
     })
     .catch(err => {
@@ -98,8 +94,6 @@ export default function TimelinePage() {
         ...doc.data()
       })) as Post[];
 
-      if (EMAIL_DEBUG) console.log('[LOAD POSTS] timeline count =', fetchedPosts.length);
-
       setPosts(fetchedPosts);
       setLoading(false);
 
@@ -137,10 +131,8 @@ export default function TimelinePage() {
     const likeDoc = await getDoc(likeRef);
 
     if (likeDoc.exists()) {
-      if (EMAIL_DEBUG) console.log('[LIKE] remove like for', postId);
       await deleteDoc(likeRef);
     } else {
-      if (EMAIL_DEBUG) console.log('[LIKE] add like for', postId);
       await setDoc(likeRef, { likedAt: Date.now() });
     }
   };
@@ -152,7 +144,6 @@ export default function TimelinePage() {
     const commentText = newComment[postId]?.trim();
 
     if (!uid || !commentText) {
-      if (EMAIL_DEBUG) console.log('[COMMENT] blocked: uid or commentText missing', { uid, hasText: !!commentText });
       return;
     }
 
@@ -164,7 +155,7 @@ export default function TimelinePage() {
       text: commentText,
       timestamp: serverTimestamp(),
     };
-    if (EMAIL_DEBUG) console.log('[COMMENT] addDoc payload', payload);
+
     await addDoc(commentsRef, payload);
 
     setNewComment((prev) => ({ ...prev, [postId]: '' }));
@@ -179,7 +170,6 @@ export default function TimelinePage() {
       const to_email = post.authorEmail || null;
       const from_name = user?.displayName || 'Anonymous';
       const post_link = `${window.location.origin}/post/${postId}`;
-      if (EMAIL_DEBUG) console.log('[COMMENT] notify owner?', { to_email, equalsSelf: to_email === user?.email, post });
 
       if (to_email && to_email !== user?.email) {
         await sendEmailDBG('comment -> owner', TEMPLATE_COMMENT, {
@@ -190,8 +180,6 @@ export default function TimelinePage() {
           post_link,
           app_name: 'Ripple',
         });
-      } else {
-        if (EMAIL_DEBUG) console.log('[COMMENT] skip notify (no to_email or self-comment)');
       }
     } catch (err) {
       console.error('[COMMENT] notify error', err);
@@ -204,12 +192,10 @@ export default function TimelinePage() {
     const postText = text.trim();
     const rawEmail = email.trim();
     if (!postText || !rawEmail) {
-      if (EMAIL_DEBUG) console.log('[NEW POST] blocked: missing text/email', { postText, rawEmail });
       return;
     }
     const user = auth.currentUser;
     if (!user) {
-      if (EMAIL_DEBUG) console.log('[NEW POST] blocked: no user');
       return;
     }
 
@@ -237,14 +223,12 @@ export default function TimelinePage() {
         parentPostId: fromRippleId ? parent : null,
         generation: fromRippleId ? nextGen : 0,
       };
-      if (EMAIL_DEBUG) console.log('[NEW POST] addDoc payload', basePost);
 
       const docRef = await addDoc(collection(db, 'posts'), basePost);
 
       // Set rippleId for root
       let effectiveRippleId = fromRippleId || docRef.id;
       if (!fromRippleId) {
-        if (EMAIL_DEBUG) console.log('[NEW POST] setting rippleId (root)', docRef.id);
         await setDoc(doc(db, 'posts', docRef.id), { rippleId: docRef.id }, { merge: true });
       }
 
@@ -274,7 +258,6 @@ export default function TimelinePage() {
           participantEmails.delete(user.email || '');
           recipients.forEach((r) => participantEmails.delete(r));
           const notifyList = Array.from(participantEmails);
-          if (EMAIL_DEBUG) console.log('[RIPPLE UPDATED] notifyList', notifyList);
 
           const rippleLink = `${window.location.origin}/ripple/${effectiveRippleId}?new=${docRef.id}`;
           for (const to_email of notifyList) {
@@ -333,7 +316,7 @@ export default function TimelinePage() {
         <WaveRipple />
       </div>
 
-      {loading && <p className="loading">Loading ripples...</p>}
+      {loading && <div className="loading">Loading ripples...</div>}
       {!loading && posts.length === 0 && <p className="text-center">No ripples yet.</p>}
 
       <div className="timeline-content">
