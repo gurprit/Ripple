@@ -21,7 +21,7 @@ import { Link, useLocation } from 'react-router-dom';
 import RippleAnimation from '../components/RippleAnimation';
 import WaveRipple from '../components/WaveRippleAnimation';
 
-const EMAIL_DEBUG = true;
+const EMAIL_DEBUG = false;
 const SERVICE_ID = 'service_28zemt7';
 const TEMPLATE_TAGGED = 'template_567fc2a';
 const TEMPLATE_RIPPLE_UPDATED = 'template_i631ek4';
