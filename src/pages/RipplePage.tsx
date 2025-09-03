@@ -348,7 +348,7 @@ export default function RipplePage() {
 
   return (
     <div className="ripple-detail">
-      <Link to="/" className="back tl">← Back to timeline</Link>
+      <Link to="/" className="back tl">Back to timeline</Link>
       <WaveRipple />
 
       <div ref={composerRef} className="ripple-composer">

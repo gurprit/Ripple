@@ -315,7 +315,7 @@ export default function PostDetailPage() {
 
   return (
     <div className="timeline">
-      <Link to="/" className="back tl">← Back to timeline</Link>
+      <Link to="/" className="back tl">Back to timeline</Link>
 
       <div className="timeline__post">
         <div className="timeline__post__content">
